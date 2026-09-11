@@ -1,0 +1,9 @@
+quantity	value	scope
+Complete fixed-input surface per endpoint	201 x 60	Oxygen by fixed effective-missegregation grid
+Logical complete-surface evaluations	2,412,000	Two contexts, 2 families, 50 represented endpoints
+Dense fixed-missegregation line grid	496 values	0.005--0.500 in increments of 0.001
+Distinct dense-grid operator evaluations	13,159,872	Exact context-specific parameter duplicates evaluated once
+Family-diagnostic modal results unchanged across objective cutoffs	32/32	Two contexts, 2 families, eight qualitative diagnostics
+Seed-weighted versus unique-parameter comparisons with the same modal result	96/96	Two contexts, 2 families, eight diagnostics, three cutoffs
+Minimum within-set modal support	100.0\%	All context--family--diagnostic--cutoff combinations
+Unique context-specific endpoints in a 50-seed ensemble	16--50	Range across the 4 context--family panels

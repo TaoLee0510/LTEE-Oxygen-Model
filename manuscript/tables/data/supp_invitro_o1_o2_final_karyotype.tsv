@@ -1,0 +1,5 @@
+distribution	n	mean_N	median_N	high_state_fraction	mode_1	mode_2	source_segment_id
+O1 observed	20	66.85	49	0.4	NA	NA	NA
+O2 observed	20	88.05	95	0.8	NA	NA	NA
+O1 fitted state	NA	64.3693692617082	61	0.32716036078741	40	83	20.5_20.5_2_1_0.5_0.3_0.2_0.1_0_0_0_0_0_0_0_0_0_0_0_0_0::O1
+O2 fitted state	NA	64.1687740927885	60	0.324032096967541	41	83	20.5_20.5_2_1_0.5_0.3_0.2_0.1_0_0_0_0_0_0_0_0_0_0_0_0_0::O2

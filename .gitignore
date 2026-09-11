@@ -1,0 +1,9 @@
+/Manuscript_Figures/data/
+
+# Local operating-system and interpreter artifacts
+.DS_Store
+__pycache__/
+*.py[cod]
+
+# Rcpp compilation caches
+.rcpp_cache*/

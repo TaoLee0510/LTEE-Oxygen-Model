@@ -1,0 +1,66 @@
+% AUTO-GENERATED: do not edit numerical values by hand.
+% Direct-context summary source: /share/lab_crd/taoli/Project/HypoxiaLTEEFigures/revised/iteration4/data/Figures/Figure5/figure5f_context_initial_optimizer_summary.tsv
+% Ratio direction source: /share/lab_crd/taoli/Project/HypoxiaLTEEFigures/revised/iteration4/data/Figures/Figure5/figure5f_prior_optimizer_summary.tsv
+% Cross-family source: /share/lab_crd/taoli/Project/HypoxiaLTEEFigures/revised/iteration4/data/Figures/Figure5/figure5f_prior_optimizer_cross_family.tsv
+% Selection source: /share/lab_crd/taoli/Project/HypoxiaLTEEFigures/revised/iteration4/data/Figures/Figure5/figure5f_selected_pair_inputs.tsv
+% DE-initial population source: /share/lab_crd/taoli/Project/HypoxiaLTEEFigures/revised/iteration4/data/Figures/Figure5/figure5f_de_initial_population_context_values.rds
+% DE-initial configuration source: /share/lab_crd/taoli/Project/HypoxiaLTEEFigures/revised/iteration4/data/Figures/Figure5/figure5f_de_initial_population_config.tsv
+% Optimizer-endpoint source: /share/lab_crd/taoli/Project/HypoxiaLTEEFigures/revised/iteration4/data/Figures/Figure5/figure5f_optimizer_solutions.tsv
+% Selected in-vivo warm-start seeds: C01=seed366, C02=seed25.
+% All families use the common in-vitro seed144 anchor.
+% C-family definition: C01, C02 are the primary in-vivo clusters; no secondary clusters are used.
+% DE initialization: for each C family, seed1--seed500 were replayed with NP=400 and joint_warmup_sigmaN=0.1 using joint_deoptim_initial_population().
+% Each context-specific DE-initial entry reports the natural-scale median and type-8 5th/95th percentiles of 200,000 initial population members (500 seeds x 400 members).
+% Member 1 of every population is the exact family-specific warm start; other members use warm-start-centered truncated normals and center-dependent feasible delta bounds.
+% Optimizer entries report the median and type-8 5th/95th percentiles of 500 feasible, unprojected endpoints for the same C family.
+% bound is calculated separately for in vivo and in vitro and gives the fraction of endpoints at that context's active parameter bound.
+% Cross-family direction is a sign-based audit of the paired endpoint log2(in vivo/in vitro) ratios; it does not apply the 0.8/1.2 equivalence band used in the family-specific endpoint-class figure.
+% Neither distribution is a posterior/confidence interval, and optimizer concentration does not prove structural identifiability.
+\clearpage
+\begin{landscape}
+\begingroup
+\scriptsize
+\setlength{\tabcolsep}{1.5pt}
+\begin{longtable}{p{0.14\textwidth}p{0.06\textwidth}p{0.25\textwidth}p{0.25\textwidth}p{0.20\textwidth}}
+\caption{Context-specific differential-evolution initial-population and optimizer-endpoint distributions for the 14 paired parameters across the primary in-vivo clusters C01--C02. Each row reports the in vivo and in vitro natural-scale parameter distributions separately. The DE-initial distribution comprises 200,000 members reconstructed from the 500 runs (400 members per run) within a family; the endpoint distribution comprises the corresponding 500 feasible final solutions. Entries report median [5th, 95th percentile], followed by context-specific active-bound occupancy. Cross-family direction is an auxiliary sign-based audit of the paired endpoint ratios and does not apply the 0.8/1.2 equivalence band used for the family-specific classes in Figure~\ref{fig:iteration1-joint-context-differences}D. These numerical-search distributions are not posterior or confidence intervals.}\label{tab:figure5f_prior_optimizer}\\
+\toprule
+Parameter & Family & In vivo: DE initial; endpoint & In vitro: DE initial; endpoint & Directional/search audit \\
+\midrule
+\endfirsthead
+\toprule
+Parameter & Family & In vivo: DE initial; endpoint & In vitro: DE initial; endpoint & Directional/search audit \\
+\midrule
+\endhead
+\texttt{lam\_max} & C01 & DE init 0.244 [0.206, 0.290]; endpoint 0.239 [0.239, 0.239]; bound=0\% & DE init 1.33 [1.13, 1.48]; endpoint 1.34 [1.34, 1.34]; bound=0\% & lower in vivo; max paired W\_E/W\_I=0; max bound=0\% \\
+\texttt{lam\_max} & C02 & DE init 0.249 [0.211, 0.295]; endpoint 0.244 [0.244, 0.244]; bound=0\% & DE init 1.33 [1.13, 1.48]; endpoint 1.34 [1.34, 1.34]; bound=0\% & lower in vivo; max paired W\_E/W\_I=0; max bound=0\% \\
+\texttt{p\_mis\_base} & C01 & DE init 0.0000104 [0.00000163, 0.0000712]; endpoint 0.00000882 [0.00000503, 0.00000921]; bound=0\% & DE init 0.00000292 [0.00000102, 0.0000200]; endpoint 0.00000248 [0.00000148, 0.00000361]; bound=0\% & higher in vivo; max paired W\_E/W\_I=0.510; max bound=0\% \\
+\texttt{p\_mis\_base} & C02 & DE init 0.000504 [0.0000350, 0.00289]; endpoint 0.000506 [0.000506, 0.000506]; bound=0\% & DE init 0.00000248 [0.00000107, 0.0000142]; endpoint 0.00000248 [0.00000248, 0.00000248]; bound=0\% & higher in vivo; max paired W\_E/W\_I=0.510; max bound=0\% \\
+\texttt{p\_wgd} & C01 & DE init 0.000174 [0.0000456, 0.000560]; endpoint 0.000182 [0.000182, 0.000202]; bound=0\% & DE init 0.000323 [0.0000849, 0.000962]; endpoint 0.000339 [0.000304, 0.000339]; bound=0\% & lower in vivo; max paired W\_E/W\_I=0.860; max bound=0\% \\
+\texttt{p\_wgd} & C02 & DE init 0.0000136 [0.0000102, 0.000111]; endpoint 0.0000124 [0.0000124, 0.0000124]; bound=0\% & DE init 0.000334 [0.0000229, 0.000941]; endpoint 0.000339 [0.000339, 0.000339]; bound=0\% & lower in vivo; max paired W\_E/W\_I=0.860; max bound=0\% \\
+\texttt{p\_misseg} & C01 & DE init 0.118 [0.0645, 0.212]; endpoint 0.118 [0.118, 0.118]; bound=0\% & DE init 0.0105 [0.00593, 0.0188]; endpoint 0.0105 [0.0105, 0.0105]; bound=0\% & higher in vivo; max paired W\_E/W\_I=0; max bound=0\% \\
+\texttt{p\_misseg} & C02 & DE init 0.164 [0.0911, 0.290]; endpoint 0.164 [0.164, 0.164]; bound=0\% & DE init 0.0105 [0.00601, 0.0186]; endpoint 0.0105 [0.0105, 0.0105]; bound=0\% & higher in vivo; max paired W\_E/W\_I=0; max bound=0\% \\
+\texttt{k\_o\_mis} & C01 & DE init 0.00103 [0.000266, 0.00394]; endpoint 0.00103 [0.00103, 0.00103]; bound=0\% & DE init 0.0000870 [0.0000225, 0.000334]; endpoint 0.0000870 [0.0000870, 0.0000870]; bound=0\% & higher in vivo; max paired W\_E/W\_I=0; max bound=0\% \\
+\texttt{k\_o\_mis} & C02 & DE init 0.00306 [0.000852, 0.0109]; endpoint 0.00306 [0.00306, 0.00306]; bound=0\% & DE init 0.0000870 [0.0000242, 0.000311]; endpoint 0.0000870 [0.0000870, 0.0000870]; bound=0\% & higher in vivo; max paired W\_E/W\_I=0; max bound=0\% \\
+\texttt{O2\_crit} & C01 & DE init 0.223 [0.186, 0.268]; endpoint 0.223 [0.223, 0.223]; bound=0\% & DE init 1.57 [1.31, 1.89]; endpoint 1.57 [1.57, 1.57]; bound=0\% & lower in vivo; max paired W\_E/W\_I=0; max bound=0\% \\
+\texttt{O2\_crit} & C02 & DE init 0.148 [0.118, 0.186]; endpoint 0.148 [0.148, 0.148]; bound=0\% & DE init 1.57 [1.25, 1.98]; endpoint 1.57 [1.57, 1.57]; bound=0\% & lower in vivo; max paired W\_E/W\_I=0; max bound=0\% \\
+\texttt{n\_O} & C01 & DE init 2.17 [1.83, 2.51]; endpoint 2.17 [2.17, 2.17]; bound=0\% & DE init 1.97 [1.63, 2.31]; endpoint 1.97 [1.97, 1.97]; bound=0\% & family-dependent or overlaps equality; max paired W\_E/W\_I=0; max bound=0\% \\
+\texttt{n\_O} & C02 & DE init 1.65 [1.35, 1.95]; endpoint 1.65 [1.65, 1.65]; bound=0\% & DE init 1.97 [1.67, 2.27]; endpoint 1.97 [1.97, 1.97]; bound=0\% & family-dependent or overlaps equality; max paired W\_E/W\_I=0; max bound=0\% \\
+\texttt{alpha\_o2} & C01 & DE init 2.53 [2.26, 2.73]; endpoint 2.69 [2.69, 2.69]; bound=0\% & DE init 0.530 [0.503, 0.592]; endpoint 0.500 [0.500, 0.500]; bound=99.6\% & higher in vivo; max paired W\_E/W\_I=0; max bound=100\% \\
+\texttt{alpha\_o2} & C02 & DE init 1.69 [1.56, 1.77]; endpoint 1.77 [1.77, 1.77]; bound=0\% & DE init 0.522 [0.502, 0.567]; endpoint 0.500 [0.500, 0.500]; bound=100\% & higher in vivo; max paired W\_E/W\_I=0; max bound=100\% \\
+\texttt{gamma\_growth} & C01 & DE init 3.23 [2.44, 3.73]; endpoint 3.31 [3.31, 3.31]; bound=0\% & DE init 1.60 [1.51, 1.92]; endpoint 1.50 [1.50, 1.50]; bound=100\% & higher in vivo; max paired W\_E/W\_I=0; max bound=100\% \\
+\texttt{gamma\_growth} & C02 & DE init 2.80 [2.09, 3.24]; endpoint 2.86 [2.86, 2.86]; bound=0\% & DE init 1.58 [1.51, 1.88]; endpoint 1.50 [1.50, 1.50]; bound=100\% & higher in vivo; max paired W\_E/W\_I=0; max bound=100\% \\
+\texttt{mu\_hp} & C01 & DE init 0.0467 [0.0123, 0.104]; endpoint 0.0515 [0.0515, 0.0515]; bound=0\% & DE init 0.00574 [0.00506, 0.0101]; endpoint 0.00500 [0.00500, 0.00500]; bound=99.8\% & higher in vivo; max paired W\_E/W\_I=0; max bound=100\% \\
+\texttt{mu\_hp} & C02 & DE init 0.0397 [0.0104, 0.0885]; endpoint 0.0434 [0.0434, 0.0434]; bound=0\% & DE init 0.00571 [0.00505, 0.0102]; endpoint 0.00500 [0.00500, 0.00500]; bound=100\% & higher in vivo; max paired W\_E/W\_I=0; max bound=100\% \\
+\texttt{gamma\_mu} & C01 & DE init 2.57 [1.95, 2.97]; endpoint 2.64 [2.64, 2.64]; bound=0\% & DE init 1.28 [1.21, 1.54]; endpoint 1.20 [1.20, 1.21]; bound=94\% & higher in vivo; max paired W\_E/W\_I=0.0169; max bound=98.4\% \\
+\texttt{gamma\_mu} & C02 & DE init 2.59 [1.96, 2.99]; endpoint 2.66 [2.66, 2.66]; bound=0\% & DE init 1.28 [1.21, 1.54]; endpoint 1.20 [1.20, 1.20]; bound=98.4\% & higher in vivo; max paired W\_E/W\_I=0.0169; max bound=98.4\% \\
+\texttt{buffer\_smax} & C01 & DE init 0.871 [0.735, 0.986]; endpoint 0.909 [0.909, 0.909]; bound=0\% & DE init 0.961 [0.826, 0.999]; endpoint 1.00 [1.00, 1.00]; bound=99.6\% & lower in vivo; max paired W\_E/W\_I=0; max bound=99.8\% \\
+\texttt{buffer\_smax} & C02 & DE init 0.864 [0.728, 0.985]; endpoint 0.900 [0.900, 0.900]; bound=0\% & DE init 0.964 [0.828, 0.999]; endpoint 1.00 [1.00, 1.00]; bound=99.8\% & lower in vivo; max paired W\_E/W\_I=0; max bound=99.8\% \\
+\texttt{buffer\_beta} & C01 & DE init 0.165 [0.133, 0.205]; endpoint 0.165 [0.165, 0.165]; bound=0\% & DE init 1.60 [1.29, 1.98]; endpoint 1.60 [1.60, 1.60]; bound=0\% & lower in vivo; max paired W\_E/W\_I=0; max bound=0\% \\
+\texttt{buffer\_beta} & C02 & DE init 0.310 [0.267, 0.358]; endpoint 0.310 [0.310, 0.310]; bound=0\% & DE init 1.60 [1.38, 1.85]; endpoint 1.60 [1.60, 1.60]; bound=0\% & lower in vivo; max paired W\_E/W\_I=0; max bound=0\% \\
+\texttt{buffer\_n\_exp} & C01 & DE init 9.37 [7.41, 9.94]; endpoint 10.0 [10.0, 10.0]; bound=99.6\% & DE init 3.32 [2.34, 5.84]; endpoint 3.16 [3.16, 3.16]; bound=0\% & higher in vivo; max paired W\_E/W\_I=0; max bound=99.6\% \\
+\texttt{buffer\_n\_exp} & C02 & DE init 9.37 [7.41, 9.94]; endpoint 10.0 [10.0, 10.0]; bound=0\% & DE init 3.32 [2.34, 5.84]; endpoint 3.16 [3.16, 3.16]; bound=0\% & higher in vivo; max paired W\_E/W\_I=0; max bound=99.6\% \\
+\bottomrule
+\end{longtable}
+\endgroup
+\end{landscape}
+\clearpage

@@ -1,0 +1,116 @@
+% Supplementary Table: robustness of the 4N trajectory across the ten
+% lowest-objective separate in vitro fits.
+%
+% PURPOSE
+% This table documents the per-fit values underlying the Results statement
+% that the modeled 4N chromosome-number decline was 3.56--4.34 chromosomes
+% and that burden assigned by the model to death associated with resource
+% stress remained below 1.8% across the
+% ten lowest-objective separate in vitro fits.
+%
+% PRIMARY RESULT ROOT
+%   /Users/4482173/Documents/GitHub/soft_couping_org/oxygen/results/
+%   fit_invitro_unified_np256_500seed_all_xxlarge_r442_exact_20260828_145253/
+%
+% PER-SEED SOURCE FILES
+% 1. Objective:
+%    seed*/fit_summary.tsv
+%    row: metric = objective_total
+% 2. Initial and terminal modeled mean chromosome number:
+%    seed*/invitro_lineage_summary.tsv
+% 3. Burden assigned by the model to death associated with resource stress
+%    and total burden:
+%    seed*/invitro_daily_counts.tsv
+%
+% TOP-TEN SELECTION AND PORTABLE AUDIT FILE
+% Across seed1,...,seed500, objective_total was read from fit_summary.tsv
+% and ranked in ascending order. Exact values used below are retained in:
+%   manuscript/tables/data/supp_invitro_top10_4n_trajectory.tsv
+% Rebuild script:
+%   manuscript/revision_staging/iteration4_claim_aligned/
+%   rebuild_invitro_top10_4n_trajectory.R
+%
+% CHROMOSOME-NUMBER CALCULATION
+% For each selected seed:
+% 1. Read invitro_lineage_summary.tsv.
+% 2. Retain cohort = 4N.
+% 3. Collapse repeated observation records sharing the same segment_id,
+%    because parallel O1/O2 records at a matched segment share one modeled
+%    lineage state.
+% 4. Initial mean N = predicted_mean_kary_N at the minimum passage_index.
+% 5. Terminal mean N = predicted_mean_kary_N at the maximum passage_index.
+% 6. Decline in mean N = initial mean N - terminal mean N.
+% The final modeled passage is on the terminal 0% O2 deprivation branch.
+%
+% MODELED RESOURCE STRESS DEATH BURDEN CALCULATION
+% For each selected seed:
+% 1. Read invitro_daily_counts.tsv and retain cohort = 4N.
+% 2. At every row with burden_total > 0, calculate:
+%      fraction assigned by the model to resource stress death
+%        = burden_dead_hypoxia / burden_total.
+% 3. Report the maximum of this fraction over all daily 4N states.
+% In all ten selected fits, the maximum occurred at passage_index = 29,
+% oxygen_pct = 0, day = 10, on the severe-deprivation branch.
+% The displayed percentage is 100 times the fraction.
+%
+% IMPORTANT DENOMINATOR/TIMEPOINT NOTE
+% This maximum-over-daily-states definition is the source of the 1.69--1.77%
+% range. It is not the same summary as the passage-end fraction shown for
+% seed144 in Figure 3F, which uses a selected passage endpoint. Both summaries
+% use burden_total as the denominator, but they differ in timepoint selection.
+%
+% VERIFIED UNROUNDED RANGES
+% Objective: 3.85564658889903--3.85733647137018.
+% Initial mean N: 84.2480049421253--84.9394423141100.
+% Terminal mean N: 80.5923639937020--80.8568533364202.
+% Decline: 3.55874408445651--4.34365938719675 chromosomes.
+% Maximum fraction assigned by the model to resource stress death:
+%   0.0169021705987944--0.0176637009550951
+%   = 1.69021705987944%--1.76637009550951%.
+%
+% INTERPRETIVE LIMIT
+% The ten rows are optimizer-selected numerical fits, not ten biological
+% replicates and not a confidence interval. The table establishes numerical
+% robustness across retained near-optimal solutions; it is not an additional
+% hypothesis test.
+
+\begin{table}[!htbp]
+\centering
+\small
+\setlength{\tabcolsep}{4.5pt}
+\caption{Modeled 4N chromosome-number decline and the fitted contribution of the compartment representing death associated with resource stress across the ten lowest-objective separate \textit{in vitro} fits. Initial and terminal mean chromosome numbers refer to the first and last modeled states of the selected 4N lineage; its terminal portion was maintained at target 0\% O$_2$. The last column is the maximum daily burden assigned by the model to death associated with resource stress, expressed as a percentage of total burden over the full modeled 4N trajectory.}
+\label{tab:invitro_top10_4n_trajectory}
+\begin{tabular}{@{}rlrrrrr@{}}
+\toprule
+Rank & Fit & Objective & \shortstack{Initial\\mean \(N\)} & \shortstack{Terminal\\mean \(N\)} & \shortstack{Decline in\\mean \(N\)} & \shortstack{Maximum modeled\\stress death burden (\%)} \\
+\midrule
+1  & \texttt{seed144} & 3.8556 & 84.25 & 80.69 & 3.56 & 1.77 \\
+2  & \texttt{seed325} & 3.8563 & 84.94 & 80.60 & 4.34 & 1.72 \\
+3  & \texttt{seed180} & 3.8566 & 84.58 & 80.62 & 3.95 & 1.76 \\
+4  & \texttt{seed362} & 3.8568 & 84.47 & 80.60 & 3.87 & 1.75 \\
+5  & \texttt{seed477} & 3.8568 & 84.38 & 80.59 & 3.78 & 1.69 \\
+6  & \texttt{seed475} & 3.8571 & 84.60 & 80.85 & 3.74 & 1.76 \\
+7  & \texttt{seed372} & 3.8572 & 84.45 & 80.60 & 3.85 & 1.75 \\
+8  & \texttt{seed64}  & 3.8572 & 84.60 & 80.79 & 3.80 & 1.76 \\
+9  & \texttt{seed166} & 3.8573 & 84.56 & 80.86 & 3.70 & 1.76 \\
+10 & \texttt{seed207} & 3.8573 & 84.64 & 80.69 & 3.96 & 1.76 \\
+\bottomrule
+\end{tabular}
+\par\vspace{0.7em}
+\begin{tabular}{@{}p{0.43\textwidth}p{0.18\textwidth}p{0.29\textwidth}@{}}
+\toprule
+Seed-144 audit quantity & Value & Scope \\
+\midrule
+Maximum passage-end stress-associated dead-burden fraction & 2N: 1.06\%; 4N: 1.73\% & Severe-deprivation passage-end summaries shown in Figure~\ref{fig:iteration1-invitro-ploidy-reshaping}F \\
+Numerical starts and fitted parameters & 500; 20 & Separate \textit{in vitro} calibration \\
+Differential-evolution convergence flags & 500 of 500 & Recorded relative-tolerance/step-tolerance stop criterion \\
+Selected local refinement & accepted, code 1 & Lowest-objective retained seed 144 \\
+Selected active configured bounds & 5 of 20 & Exact active-bound count \\
+\bottomrule
+\end{tabular}
+\par\vspace{0.5em}
+\begin{minipage}{0.96\textwidth}
+\footnotesize
+\textit{Note:} Fits are ordered by the retained objective value. The decline is the initial minus terminal predicted mean chromosome number. The dead burden percentage is the maximum, over all daily 4N states, of the burden assigned by the model to death associated with resource stress as a percentage of total burden. It is therefore a trajectory maximum rather than an endpoint-only value. These optimizer-selected solutions are not biological replicates or a confidence interval.
+\end{minipage}
+\end{table}

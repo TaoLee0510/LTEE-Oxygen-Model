@@ -1,0 +1,10 @@
+component	current_specification	primary_source
+Displayed families	C01 and C02	cluster_k_selection.tsv and current manifests
+Primary ensemble	Lowest-objective q10; 50 optimizer endpoints per family	q10_endpoint_manifest_validation.tsv
+Exact endpoint multiplicity	C01: 50 unique/50 seeds, max multiplicity 1; C02: 16 unique/50 seeds, max multiplicity 35	joint_unique_parameter_endpoint_counts.tsv
+Steady-state mechanistic scan	201 oxygen values from 0% to 5%; 60 log-spaced fixed mechanistic p_misseg values from 0.005 to 0.5	figure6_robustness.R
+Main oxygen display window	0-2% oxygen in both steady-state and finite-time panels	figure6_ab_layout.R
+Main finite-time display	Panels A-B distinguish steady state from finite time; displayed finite-time window is 0-1000 days	figure6_ab_layout.R
+Full-range validation source	0-10000 days; 5 initial-ploidy states, 201 oxygen values and 5 fixed p_misseg values per validated panel	full_range_panel_validation.tsv
+Propagation modes	Continuous in vivo; continuous comparator and threshold-triggered stochastic passage in vitro	finite_time_full_q10_current.tsv and full_range_panel_validation.tsv
+Interpretive status	Post-fit counterfactual/model simulation; optimizer endpoints are numerical solutions, not biological replicates or posterior samples	joint_seed_robustness_audit_summary.tsv and figure annotations
