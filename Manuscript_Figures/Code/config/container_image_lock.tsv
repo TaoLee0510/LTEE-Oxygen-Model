@@ -1,0 +1,10 @@
+key	value	description
+analysis_version	publication-r44	Version label for the manuscript fitting, analysis, and figure environment
+docker_image	docker.io/zafiro/o2_supply_demand_map:r44	Recommended Docker Hub image
+docker_config_id	sha256:32c49db0ad27a0b5832b601ba96e2b72bfc1e2f1ccbf34687f8f596f1f7cdcd5	Verified linux/amd64 Docker image configuration ID
+docker_index_digest	sha256:015fbbc343f17e979a8c36a546d50e1dd18043c675c61ecaee5b51f1043039c5	Verified multi-platform OCI index digest
+docker_amd64_manifest_digest	sha256:32d30d8d3cae9468e466cabeaa7f51cfcc07b4a867ea66aa06c998c141067132	Verified linux/amd64 manifest digest
+platform	linux/amd64	Required execution platform
+sif_file_name	o2_supply_demand_map_r44.sif	Default portable SIF file name
+sif_sha256	ee9fe0f5ab6d3fb0689b23c02d330de677afa4d0cc044df9f2eeeae42f8e5e68	Verified SIF checksum from the model runtime lock
+verified_date	2026-07-25	Date recorded by Model/oxygen/code/O2_supply_demand_MAP/Docker/image_runtime_lock.tsv

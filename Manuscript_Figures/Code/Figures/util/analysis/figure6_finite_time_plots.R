@@ -1061,10 +1061,10 @@ f6ft_read_diagnostics <- function(run_paths) {
     stop("Finite-time diagnostic table lacks required fields.")
   }
   data$context_label <- factor(
-    paste0(data$panel_letter, ". ", data$pair_label, " — ", data$model_context),
+    paste0(data$pair_label, " — ", data$model_context),
     levels = c(
-      "C. C01 — in vivo", "D. C02 — in vivo",
-      "E. C01 — in vitro", "F. C02 — in vitro"
+      "C01 — in vivo", "C02 — in vivo",
+      "C01 — in vitro", "C02 — in vitro"
     )
   )
   data
@@ -1127,10 +1127,6 @@ f6ft_calibration_scatter <- function(
     data, x_column, y_column, row_column = NULL, title, subtitle,
     x_label, y_label
 ) {
-  groups <- c(if (!is.null(row_column)) row_column, "context_label")
-  annotations <- f6ft_weighted_metrics_for_plot(
-    data, x_column, y_column, groups
-  )
   plot_data <- data[
     is.finite(data[[x_column]]) & is.finite(data[[y_column]]) &
       is.finite(data$endpoint_multiplicity_q10) &
@@ -1147,18 +1143,12 @@ f6ft_calibration_scatter <- function(
       intercept = 0, slope = 1, colour = "#222222",
       linewidth = 0.35, linetype = "dashed"
     ) +
-    ggplot2::geom_text(
-      data = annotations,
-      ggplot2::aes(x = 1.08, y = 6.92, label = annotation),
-      inherit.aes = FALSE, hjust = 0, vjust = 1,
-      size = 2.05, colour = "#222222", lineheight = 0.92
-    ) +
     ggplot2::coord_equal(xlim = c(1, 7), ylim = c(1, 7), expand = FALSE) +
     ggplot2::scale_fill_viridis_c(
       option = "C", trans = "log10", name = "Weighted\nrow count"
     ) +
     ggplot2::labs(
-      title = title, subtitle = subtitle,
+      title = title,
       x = x_label, y = y_label
     ) +
     f6ft_calibration_theme()
@@ -1305,10 +1295,6 @@ f6ft_draw_supplement_7_6 <- function(workspace_root = f6r_find_workspace_root())
     ) +
     ggplot2::labs(
       title = "B. Expm minus full-eigen residuals",
-      subtitle = paste0(
-        "Red line: weighted bias; conditioning and spectral-gap values are ",
-        "retained in the source table"
-      ),
       x = "Mean of expm and full-eigen ploidy",
       y = "Expm − full-eigen mean ploidy"
     ) +
@@ -1337,10 +1323,6 @@ f6ft_draw_supplement_7_7 <- function(workspace_root = f6r_find_workspace_root())
     paste0("Day ", data$day),
     levels = paste0("Day ", c(25, 100, 500, 1000))
   )
-  annotations <- f6ft_weighted_metrics_for_plot(
-    data, "steady_mean_ploidy", "expm_mean_ploidy",
-    c("context_label", "day_label")
-  )
   plot <- ggplot2::ggplot(
     data,
     ggplot2::aes(
@@ -1353,12 +1335,6 @@ f6ft_draw_supplement_7_7 <- function(workspace_root = f6r_find_workspace_root())
       intercept = 0, slope = 1, colour = "#222222",
       linewidth = 0.35, linetype = "dashed"
     ) +
-    ggplot2::geom_text(
-      data = annotations,
-      ggplot2::aes(x = 1.08, y = 6.92, label = annotation),
-      inherit.aes = FALSE, hjust = 0, vjust = 1,
-      size = 1.85, lineheight = 0.90
-    ) +
     ggplot2::facet_grid(context_label ~ day_label) +
     ggplot2::coord_equal(xlim = c(1, 7), ylim = c(1, 7), expand = FALSE) +
     ggplot2::scale_fill_viridis_c(
@@ -1366,10 +1342,6 @@ f6ft_draw_supplement_7_7 <- function(workspace_root = f6r_find_workspace_root())
     ) +
     ggplot2::labs(
       title = "Finite-time expm solutions approach the fixed-environment attractor",
-      subtitle = paste0(
-        "The same q10 endpoint ensemble is shown at four time horizons; identity ",
-        "marks equality with the dominant-eigenvector steady state"
-      ),
       x = "Dominant-eigenvector steady-state mean ploidy",
       y = "Expm finite-time mean ploidy"
     ) +
@@ -1581,7 +1553,8 @@ f6ft_draw_supp6_9 <- function(workspace_root = f6r_find_workspace_root()) {
   output_dir <- file.path(paths$root, "data", "Figures", "Supp_Figure6_9")
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   plot <- f6x_main_inverse_plot(paths) +
-    ggplot2::labs(title = "Inverse p_misseg required for target ploidy") +
+    ggplot2::labs(title = "Inverse p_misseg required for target ploidy",
+                  subtitle = NULL, caption = NULL) +
     ggplot2::theme(
       legend.position = "bottom", legend.box = "vertical",
       legend.box.just = "center"
@@ -1636,27 +1609,13 @@ f6g_draw_full_diagnostic <- function(
   combined <- (
     f6g_column_dimension_heading() / plot +
       patchwork::plot_layout(heights = c(0.052, 1)) +
-      patchwork::plot_annotation(
-        title = title, subtitle = subtitle,
-        caption = paste0(
-          "Full stored data use daily values from 0 to 10,000 days; the ",
-          "diagnostic raster displays every 20th day at the full oxygen grid.",
-          if (mode == "passage") paste0(
-            " Passage is triggered on the first eligible integer day; ",
-            "sampling uses that day's actual population. Means include all 50 endpoints."
-          ) else ""
-        )
-      )
+      patchwork::plot_annotation(title = title)
   ) & ggplot2::theme(
     plot.title = ggplot2::element_text(
       family = "Helvetica", face = "bold", size = 11
     ),
-    plot.subtitle = ggplot2::element_text(
-      family = "Helvetica", size = 7.5, colour = "#555555"
-    ),
-    plot.caption = ggplot2::element_text(
-      family = "Helvetica", size = 7, colour = "#555555", hjust = 0
-    )
+    plot.subtitle = ggplot2::element_blank(),
+    plot.caption = ggplot2::element_blank()
   )
   output_dir <- file.path(
     paths$root, "data", "Figures", paste0("Supp_Figure6_", number)

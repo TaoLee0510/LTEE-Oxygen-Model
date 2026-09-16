@@ -1486,6 +1486,9 @@ s64_draw <- function(workspace_root = f6r_find_workspace_root()) {
     A = s64_panel_a(paths), B = s64_panel_b(paths),
     C = s64_panel_d(paths), D = s64_panel_e(paths), E = s64_panel_f(paths)
   )
+  plots <- lapply(plots, function(plot) {
+    plot + ggplot2::labs(subtitle = NULL, caption = NULL)
+  })
   square_heatmap_facets <- all(vapply(
     plots[c("B", "C", "D", "E")],
     function(plot) isTRUE(all.equal(plot$theme$aspect.ratio, 1)),
@@ -1514,10 +1517,7 @@ s64_draw <- function(workspace_root = f6r_find_workspace_root()) {
   assembled <- plots$A | right
   assembled <- assembled + patchwork::plot_layout(widths = c(0.31, 0.69)) +
     patchwork::plot_annotation(
-      title = "Supplementary Figure 6-4. Extended-range in vitro oxygen-ploidy response",
-      subtitle = paste0(
-        "O2 = 0-20% at 0.1% intervals. Values above 5% are post-fit model extrapolations."
-      )
+      title = "Supplementary Figure 6-4. Extended-range in vitro oxygen-ploidy response"
     )
   output_png <- file.path(paths$base$figures, paste0(paths$output_base, ".png"))
   output_pdf <- file.path(paths$base$figures, paste0(paths$output_base, ".pdf"))

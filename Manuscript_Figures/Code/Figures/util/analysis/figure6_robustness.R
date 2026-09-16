@@ -9,6 +9,19 @@
 
 options(stringsAsFactors = FALSE, warn = 1)
 
+.figure6_container_active <- tolower(trimws(Sys.getenv(
+  "LTEE_CONTAINER_RUNTIME_ACTIVE",
+  unset = Sys.getenv("O2SD_CONTAINER_RUNTIME_ACTIVE", unset = "")
+)))
+if (!.figure6_container_active %in% c("true", "t", "1", "yes", "y")) {
+  stop(
+    "Publication Figure 6 analysis must run in the locked Docker image ",
+    "or its verified Apptainer/Singularity SIF. Use ",
+    "Manuscript_Figures/Code/run_all_figures.sh."
+  )
+}
+rm(.figure6_container_active)
+
 # Figure 6 scans the fitted mechanistic amplitude p_misseg.  Unlike the
 # historical Figure 6 forcing helper, this preserves p_mis_base and k_o_mis so
 # that the repository Model package continues to derive p_mis(N, O2) from the current

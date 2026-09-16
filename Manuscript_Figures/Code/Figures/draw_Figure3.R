@@ -1168,7 +1168,7 @@ direct_callouts <- do.call(
     data.frame(
       cohort = cohort_value,
       lineage_passage = if (cohort_value == "2N") 19.0 else 24.5,
-      burden_fraction = direct_max * if (cohort_value == "2N") 0.62 else 1.70,
+      burden_fraction = direct_max * if (cohort_value == "2N") 0.28 else 1.70,
       label = sprintf(
         "%s modeled stress death max = %.2f%%",
         cohort_value,
@@ -1496,11 +1496,7 @@ panel_g_core <- ggplot() +
   ) +
   labs(
     x = "Original parameter value (log10 scale)",
-    y = NULL,
-    caption = paste0(
-      "Each endpoint is one numerical-search solution; ",
-      "these are not posterior draws or biological replicates."
-    )
+    y = NULL
   ) +
   theme_figure3(11.8) +
   theme(
@@ -1510,9 +1506,6 @@ panel_g_core <- ggplot() +
     axis.text.y = element_text(size = 10.4, face = "bold"),
     axis.text.x = element_text(size = 9.8),
     axis.title.x = element_text(size = 11.8),
-    plot.caption = element_text(
-      size = 9.2, color = "#4B5563", hjust = 0, lineheight = 1.02
-    ),
     plot.margin = margin(7, 10, 7, 28)
   )
 
@@ -1581,6 +1574,68 @@ save_plot_set(
   width = 12.5,
   height = 6.65
 )
+
+# Keep the assembled PDF's words as vector text. The PNG compositor below
+# remains the reference for pixel dimensions and panel placement, but its
+# ImageMagick PDF conversion would flatten every label into a page image.
+render_vector_figure3 <- function(path) {
+  canvas_width <- 6100
+  canvas_height <- 5856
+  label_padding <- 138
+  row_tops <- c(0, 1783, 3723)
+  panels <- list(
+    A = list(plot = panel_a, x = 0, row = 1, width = 3000, height = 1575),
+    B = list(plot = panel_b, x = 3050, row = 1, width = 3000, height = 1575),
+    C = list(plot = panel_c, x = 0, row = 2, width = 3300, height = 1732),
+    D = list(plot = panel_d, x = 3350, row = 2, width = 1350, height = 1418),
+    E = list(plot = panel_e, x = 4750, row = 2, width = 1350, height = 1418),
+    F = list(plot = panel_f, x = 0, row = 3, width = 2250, height = 1995),
+    G = list(plot = panel_g, x = 2300, row = 3, width = 3750, height = 1995)
+  )
+  titles <- c(
+    A = "Observed versus predicted passage growth rates",
+    B = "Observed versus predicted G0/G1 ploidy-density curves",
+    C = "Predicted ploidy distribution across passages",
+    D = "Post-missegregation survival",
+    E = "Nonviable daughter fraction",
+    F = "Severe-deprivation burden trajectories",
+    G = "Fitted parameter endpoints across 500 starts"
+  )
+  grDevices::cairo_pdf(
+    path,
+    width = canvas_width / 300,
+    height = canvas_height / 300,
+    onefile = FALSE,
+    bg = "white"
+  )
+  on.exit(grDevices::dev.off(), add = TRUE)
+  grid::grid.newpage()
+  for (label in names(panels)) {
+    spec <- panels[[label]]
+    top <- row_tops[[spec$row]]
+    plot_top <- top + label_padding
+    panel_viewport <- grid::viewport(
+      x = (spec$x + spec$width / 2) / canvas_width,
+      y = 1 - (plot_top + spec$height / 2) / canvas_height,
+      width = spec$width / canvas_width,
+      height = spec$height / canvas_height
+    )
+    print(spec$plot, vp = panel_viewport, newpage = FALSE)
+    grid::grid.text(
+      paste0(label, ". ", titles[[label]]),
+      x = (spec$x + 24) / canvas_width,
+      y = 1 - (top + 98) / canvas_height,
+      just = c("left", "bottom"),
+      gp = grid::gpar(
+        fontfamily = "Arial",
+        fontface = "bold",
+        fontsize = if (label %in% c("D", "E")) 18.24 else 20.64,
+        col = "#111111"
+      )
+    )
+  }
+}
+render_vector_figure3(file.path(figure_dir, "assembled_fig3_vector.pdf"))
 
 # Record exact external sources and machine-checkable panel contracts.
 provenance <- data.frame(
@@ -1887,6 +1942,16 @@ draw_Figure3 <- function() {
     output_basename = "assembled_fig3",
     validation_basename = "figure3_layout_validation.tsv"
   )
+  vector_pdf <- file.path(panel_dir, "assembled_fig3_vector.pdf")
+  require_files(vector_pdf, "Figure 3 vector PDF")
+  for (destination in c(
+    file.path(panel_dir, "assembled_fig3.pdf"),
+    file.path(OUTPUT_ROOT, "assembled_fig3.pdf")
+  )) {
+    if (!file.copy(vector_pdf, destination, overwrite = TRUE)) {
+      stop("Failed to stage Figure 3 vector PDF: ", destination)
+    }
+  }
   require_files(
     file.path(
       OUTPUT_ROOT,

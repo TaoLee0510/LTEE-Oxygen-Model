@@ -14,13 +14,13 @@ options(stringsAsFactors = FALSE, warn = 1)
 f6p_profile <- function() "figure7_fixed_pmisseg_invitro_passage_q10_v1"
 
 f6p_joint_result_root <- function() {
-  root <- trimws(Sys.getenv(
-    "FIGURE_JOINT_RESULT_ROOT",
-    unset = paste0(
-      "/Users/4482173/Documents/GitHub/soft_couping_org/oxygen/results/",
-      "fit_joint_unified_global_invitro_500seed_all_xxlarge_r442_exact_20260828_145253"
+  root <- trimws(Sys.getenv("FIGURE_JOINT_RESULT_ROOT", unset = ""))
+  if (!nzchar(root)) {
+    stop(
+      "FIGURE_JOINT_RESULT_ROOT is required. Use the container publication ",
+      "wrapper so the repository results/joint directory is selected."
     )
-  ))
+  }
   normalizePath(root, mustWork = TRUE)
 }
 

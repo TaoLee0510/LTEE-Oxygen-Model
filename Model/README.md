@@ -35,17 +35,22 @@ contract without editing model code.
 
 ## Fitting entry point
 
-Run commands from this `Model` directory and pass it as `--project_root`:
+Publication fitting must use the locked container environment. From this
+`Model` directory, call the Docker wrapper and pass the directory as
+`--project_root`:
 
 ```bash
-bash oxygen/code/O2_supply_demand_MAP/runner/run_o2_fit.sh \
+bash oxygen/code/O2_supply_demand_MAP/Docker/local/run_o2_fit_docker.sh \
   --project_root="$PWD" \
   --fitting_mode=invivo
 ```
 
 Use `--fitting_mode=invitro` for the in-vitro fit. The shared configuration is
 `oxygen/config/O2_supply_demand.yaml`; its relative input paths resolve within
-this package.
+this package. The lower-level `runner/run_o2_fit.sh` is an internal container
+entry point and must not be invoked with host R for publication analysis. On an
+HPC system, use the corresponding scripts under `Docker/hpc/` with the locked
+SIF.
 
 For a joint fit started without historical warm-start results, pass:
 

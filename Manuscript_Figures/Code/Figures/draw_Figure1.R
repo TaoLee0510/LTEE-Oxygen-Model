@@ -103,9 +103,10 @@ condition_linetypes <- c(control = "11", `oxygen-deprived` = "solid")
 # Takeaway: the systems share starting-ploidy cohorts and comparable observation
 # classes, but use distinct experimental clocks and outcome units.
 # Encoding: lineage = green/orange; O2 = blue gradient; treatment = line type;
-# population size / tumor volume / flow sampling / flow peak / direct chromosome
-# count / scRNA-seq-derived chromosome profile = filled circle / open circle /
-# open triangle / filled triangle / diamond / double circle.
+# live/dead counts / tumor volume / terminal necrosis / flow sampling /
+# flow peak / direct chromosome count / scRNA-seq-derived chromosome profile =
+# split black-white circle / open circle / filled square / open triangle /
+# filled triangle / diamond / double circle.
 
 condition_from_segment <- function(x) {
   residue <- gsub("_", "", gsub("20.5", "", as.character(x), fixed = TRUE), fixed = TRUE)
@@ -135,9 +136,67 @@ save_both <- function(plot, stem, width, height) {
     paste0(stem, ".png"), plot = plot, width = width, height = height,
     units = "in", dpi = 300, bg = "white"
   )
+  # Base PDF retains rotated labels as text; embed its fonts for stable layout.
+  pdf_path <- paste0(stem, ".pdf")
   ggsave(
-    paste0(stem, ".pdf"), plot = plot, width = width, height = height,
-    units = "in", device = grDevices::cairo_pdf, bg = "white"
+    pdf_path, plot = plot, width = width, height = height,
+    units = "in", device = grDevices::pdf, bg = "white",
+    useDingbats = FALSE
+  )
+  gs_bin <- Sys.which("gs")
+  if (!nzchar(gs_bin)) {
+    candidates <- c("/usr/local/bin/gs", "/opt/homebrew/bin/gs")
+    gs_bin <- candidates[file.exists(candidates)][1L]
+  }
+  if (is.na(gs_bin) || !nzchar(gs_bin)) {
+    stop("Ghostscript is required to embed Figure 1 PDF fonts")
+  }
+  embedded_pdf <- tempfile("figure1_embedded_", dirname(stem), ".pdf")
+  on.exit(unlink(embedded_pdf), add = TRUE)
+  gs_output <- suppressWarnings(system2(
+    gs_bin,
+    args = c(
+      "-q", "-dBATCH", "-dNOPAUSE", "-sDEVICE=pdfwrite",
+      "-dPDFSETTINGS=/prepress", "-dEmbedAllFonts=true",
+      "-dSubsetFonts=true", paste0("-sOutputFile=", embedded_pdf),
+      pdf_path
+    ),
+    stdout = TRUE, stderr = TRUE
+  ))
+  gs_status <- attr(gs_output, "status")
+  if ((!is.null(gs_status) && gs_status != 0L) ||
+      !file.exists(embedded_pdf) || file.info(embedded_pdf)$size == 0L) {
+    stop("Failed to embed Figure 1 PDF fonts: ", paste(gs_output, collapse = "\n"))
+  }
+  if (!file.copy(embedded_pdf, pdf_path, overwrite = TRUE)) {
+    stop("Failed to publish font-embedded Figure 1 PDF: ", pdf_path)
+  }
+}
+
+make_split_circle_symbols <- function(
+    x, y, x_radius, y_radius, n_arc_points = 24L) {
+  stopifnot(
+    length(x) == length(y),
+    length(x_radius) == 1L,
+    length(y_radius) == 1L,
+    n_arc_points >= 8L
+  )
+  make_half <- function(angles) {
+    do.call(
+      rbind,
+      lapply(seq_along(x), function(index) {
+        data.frame(
+          symbol_id = index,
+          x = x[[index]] + x_radius * cos(angles),
+          y = y[[index]] + y_radius * sin(angles),
+          stringsAsFactors = FALSE
+        )
+      })
+    )
+  }
+  list(
+    white = make_half(seq(pi / 2, 3 * pi / 2, length.out = n_arc_points)),
+    black = make_half(seq(-pi / 2, pi / 2, length.out = n_arc_points))
   )
 }
 
@@ -208,6 +267,13 @@ flow_events <- passage |>
 population_events <- design_ivt |>
   distinct(cohort, condition, track, track_y, cumulative_end_day)
 
+population_split_symbols <- make_split_circle_symbols(
+  x = population_events$cumulative_end_day,
+  y = population_events$track_y + 0.32,
+  x_radius = 0.78,
+  y_radius = 0.036
+)
+
 design_ivt_outlines <- design_ivt |>
   group_by(cohort, condition, track, track_y) |>
   summarise(
@@ -222,6 +288,19 @@ active_harvests <- harvest |>
   group_by(cohort) |>
   filter(cohort != "4N" | harvest_day == max(harvest_day)) |>
   ungroup()
+
+terminal_necrosis_events <- harvest |>
+  filter(
+    included_under_config,
+    used_in_necrosis_loss,
+    has_necrosis,
+    n_necrosis_obs > 0
+  ) |>
+  group_by(cohort, harvest_day) |>
+  summarise(
+    n_necrosis_obs = sum(n_necrosis_obs),
+    .groups = "drop"
+  )
 
 burden_days <- burden |>
   filter(included_under_config) |>
@@ -240,6 +319,9 @@ schematic_tumor_height <- function(day, max_day, cohort) {
   shape_exponent <- ifelse(cohort == "2N", 2.00, 3.00)
   0.06 + 0.54 * progress^shape_exponent
 }
+
+scrna_profile_marker_offset <- 0.16
+terminal_necrosis_marker_offset <- 0.46
 
 invivo_funnel <- invivo_tracks |>
   tidyr::crossing(progress = seq(0, 1, length.out = 201)) |>
@@ -268,6 +350,24 @@ active_harvests <- active_harvests |>
     )
   )
 
+terminal_necrosis_events <- terminal_necrosis_events |>
+  inner_join(
+    invivo_tracks |> select(cohort, max_day, base_y),
+    by = "cohort"
+  ) |>
+  mutate(
+    upper_y = base_y + schematic_tumor_height(
+      harvest_day, max_day, cohort
+    ),
+    marker_y = upper_y + terminal_necrosis_marker_offset
+  )
+
+# Keep all calibration events above, but show only the last one per cohort.
+terminal_necrosis_display_events <- terminal_necrosis_events |>
+  group_by(cohort) |>
+  filter(harvest_day == max(harvest_day)) |>
+  ungroup()
+
 p_a <- ggplot() +
   geom_vline(
     xintercept = common_time_breaks,
@@ -295,13 +395,17 @@ p_a <- ggplot() +
     ),
     fill = NA, linewidth = 0.62
   ) +
-  geom_point(
-    data = population_events,
-    aes(
-      x = cumulative_end_day, y = track_y + 0.32,
-      colour = cohort
-    ),
-    shape = 16, size = 0.82, alpha = 0.88
+  geom_polygon(
+    data = population_split_symbols$white,
+    aes(x = x, y = y, group = symbol_id),
+    inherit.aes = FALSE,
+    fill = "white", colour = dark, linewidth = 0.12
+  ) +
+  geom_polygon(
+    data = population_split_symbols$black,
+    aes(x = x, y = y, group = symbol_id),
+    inherit.aes = FALSE,
+    fill = "black", colour = dark, linewidth = 0.12
   ) +
   geom_point(
     data = flow_events,
@@ -343,13 +447,26 @@ p_a <- ggplot() +
   ) +
   geom_point(
     data = active_harvests,
-    aes(x = harvest_day, y = upper_y + 0.16, colour = cohort),
+    aes(
+      x = harvest_day,
+      y = upper_y + scrna_profile_marker_offset,
+      colour = cohort
+    ),
     shape = 21, fill = "white", size = 3.0, stroke = 0.65
   ) +
   geom_point(
     data = active_harvests,
-    aes(x = harvest_day, y = upper_y + 0.16, colour = cohort),
+    aes(
+      x = harvest_day,
+      y = upper_y + scrna_profile_marker_offset,
+      colour = cohort
+    ),
     shape = 21, fill = "white", size = 1.45, stroke = 0.52
+  ) +
+  geom_point(
+    data = terminal_necrosis_display_events,
+    aes(x = harvest_day, y = marker_y, colour = cohort),
+    shape = 15, size = 1.35, alpha = 0.98
   ) +
   annotate(
     "text", x = 0, y = 9.02, label = "In vitro evolution",
@@ -387,7 +504,6 @@ p_a <- ggplot() +
   ) +
   labs(
     title = "A. Matched experimental design",
-    subtitle = "Shared elapsed-day scale; each experimental clock starts from its own origin",
     x = "Elapsed day from each experiment's start", y = NULL
   ) +
   theme_manuscript() +
@@ -396,9 +512,6 @@ p_a <- ggplot() +
     axis.ticks.y = element_blank(),
     legend.position = "none",
     plot.title = element_text(size = 7.8, face = "bold", margin = margin(b = 1)),
-    plot.subtitle = element_text(
-      size = 5.7, colour = "#666666", margin = margin(b = 3)
-    ),
     plot.margin = margin(2, 7, 4, 13)
   )
 
@@ -437,6 +550,13 @@ oxygen_key_ticks <- data.frame(
       (oxygen_key_right - oxygen_key_left) *
         oxygen_key_position(oxygen_pct)
   )
+
+live_dead_key_symbol <- make_split_circle_symbols(
+  x = 0.137,
+  y = 0.34,
+  x_radius = 0.0025,
+  y_radius = 0.027
+)
 
 # -----------------------------------------------------------------------------
 # B: observed in-vitro ploidy trajectories and distributions
@@ -618,13 +738,14 @@ flow_peak_plot <- flow_peak |>
   ) |>
   ungroup()
 
+# Plain ASCII keeps the small facet labels as complete PDF text objects.
 measurement_facet <- facet_grid(
   condition ~ cohort,
   switch = "y",
   labeller = labeller(
     condition = c(
       control = "Control",
-      `oxygen-deprived` = "O\u2082-depr."
+      `oxygen-deprived` = "O2-depr."
     )
   )
 )
@@ -634,6 +755,7 @@ measurement_panel_theme <- theme(
   axis.text = element_text(size = 5.0, colour = dark),
   axis.title = element_text(size = 5.5),
   plot.title = element_text(size = 7.8, face = "bold", hjust = 0),
+  plot.title.position = "plot",
   plot.tag = element_text(size = 8.0, face = "bold"),
   panel.spacing.x = grid::unit(2.0, "mm"),
   panel.spacing.y = grid::unit(1.5, "mm"),
@@ -649,7 +771,7 @@ measurement_panel_theme <- theme(
   ),
   strip.placement = "outside",
   strip.text.y.left = element_text(
-    angle = 90, size = 4.5, face = "bold",
+    angle = 0, size = 4.5, face = "bold",
     margin = margin(l = 0.4, r = 0.4)
   ),
   plot.margin = margin(1.5, 3, 1.5, 3)
@@ -1017,19 +1139,28 @@ p_encoding_key <- ggplot() +
     hjust = 0, vjust = 0.5, size = 2.15, colour = dark
   ) +
   annotate(
-    "text", x = 0.755, y = 0.72, label = "Target O\u2082 (%)",
-    hjust = 0, vjust = 0.5, size = 2.10, fontface = "bold", colour = dark
+    "text", x = 0.745, y = 0.72, label = "Target O2 (%)",
+    hjust = 0, vjust = 0.5, size = 2.10, fontface = "bold",
+    colour = dark
   ) +
   annotate(
     "text", x = 0.015, y = 0.34, label = "Measurements",
     hjust = 0, vjust = 0.5, size = 2.15, fontface = "bold", colour = dark
   ) +
-  annotate(
-    "point", x = 0.126, y = 0.34,
-    shape = 16, size = 0.75, colour = dark
+  geom_polygon(
+    data = live_dead_key_symbol$white,
+    aes(x = x, y = y, group = symbol_id),
+    inherit.aes = FALSE,
+    fill = "white", colour = dark, linewidth = 0.16
+  ) +
+  geom_polygon(
+    data = live_dead_key_symbol$black,
+    aes(x = x, y = y, group = symbol_id),
+    inherit.aes = FALSE,
+    fill = "black", colour = dark, linewidth = 0.16
   ) +
   annotate(
-    "text", x = 0.143, y = 0.34, label = "population size",
+    "text", x = 0.154, y = 0.34, label = "live/dead counts",
     hjust = 0, vjust = 0.5, size = 1.90, colour = dark
   ) +
   annotate(
@@ -1042,35 +1173,44 @@ p_encoding_key <- ggplot() +
     hjust = 0, vjust = 0.5, size = 1.90, colour = dark
   ) +
   annotate(
-    "point", x = 0.465, y = 0.34,
-    shape = 23, size = 0.95, stroke = 0.24,
-    fill = "white", colour = dark
+    "point", x = 0.490, y = 0.34,
+    shape = 15, size = 0.88, colour = dark
   ) +
   annotate(
-    "text", x = 0.482, y = 0.34, label = "direct chromosome count",
+    "text", x = 0.507, y = 0.34,
+    label = "Terminal necrosis measurements",
     hjust = 0, vjust = 0.5, size = 1.88, colour = dark
   ) +
   annotate(
     "point", x = 0.126, y = 0.08,
+    shape = 23, size = 0.95, stroke = 0.24,
+    fill = "white", colour = dark
+  ) +
+  annotate(
+    "text", x = 0.143, y = 0.08, label = "direct chromosome count",
+    hjust = 0, vjust = 0.5, size = 1.88, colour = dark
+  ) +
+  annotate(
+    "point", x = 0.410, y = 0.08,
     shape = 24, size = 0.975, stroke = 0.24,
     fill = "white", colour = dark
   ) +
   annotate(
-    "text", x = 0.143, y = 0.08, label = "flow cytometry sampling",
+    "text", x = 0.427, y = 0.08, label = "flow cytometry sampling",
     hjust = 0, vjust = 0.5, size = 1.90, colour = dark
   ) +
   annotate(
-    "point", x = 0.365, y = 0.08,
+    "point", x = 0.700, y = 0.08,
     shape = 21, size = 1.05, stroke = 0.26,
     fill = "white", colour = dark
   ) +
   annotate(
-    "point", x = 0.365, y = 0.08,
+    "point", x = 0.700, y = 0.08,
     shape = 21, size = 0.55, stroke = 0.225,
     fill = "white", colour = dark
   ) +
   annotate(
-    "text", x = 0.383, y = 0.08, label = "scRNA-seq profile",
+    "text", x = 0.717, y = 0.08, label = "scRNA-seq profile",
     hjust = 0, vjust = 0.5, size = 1.90, colour = dark
   ) +
   scale_fill_gradientn(
@@ -1137,6 +1277,14 @@ invisible(file.copy(
 ))
 
 summary_table <- bind_rows(
+  terminal_necrosis_display_events |>
+    transmute(
+      panel = "F1A", cohort = as.character(cohort),
+      group = "Terminal necrosis measurements",
+      time_day = harvest_day,
+      estimate = n_necrosis_obs,
+      lower = NA_real_, upper = NA_real_
+    ),
   trajectory_summary |>
     transmute(
       panel = "F1B", cohort = as.character(cohort),
@@ -1181,7 +1329,7 @@ output_metadata <- data.frame(
   width = unname(figure1_dimensions[["width"]]),
   height = unname(figure1_dimensions[["height"]]),
   dpi = 300,
-  plotting_contract = "iteration2_o2_low_range_expanded_large_inline_panel_titles",
+  plotting_contract = "iteration4_live_dead_and_terminal_necrosis_measurements",
   stringsAsFactors = FALSE
 )
 write.table(
@@ -1229,6 +1377,17 @@ measurement_validation <- data.frame(
     "raw_invitro_passage_records",
     "raw_passages_with_complete_population_measurement",
     "displayed_invitro_population_markers",
+    "displayed_invitro_live_dead_count_markers",
+    "displayed_terminal_necrosis_event_markers",
+    "terminal_necrosis_observations_represented",
+    "eligible_terminal_necrosis_event_timepoints",
+    "eligible_terminal_necrosis_observations",
+    "terminal_necrosis_display_rule",
+    "live_dead_marker_halves",
+    "terminal_necrosis_legend_label",
+    "terminal_necrosis_marker_style",
+    "terminal_necrosis_marker_position",
+    "terminal_necrosis_to_scrna_vertical_gap",
     "observed_flow_samples",
     "displayed_flow_group_timepoints",
     "minimum_flow_density_mass_retained_in_ploidy_1_to_5",
@@ -1247,6 +1406,17 @@ measurement_validation <- data.frame(
     nrow(population),
     sum(population$population_measurement_complete),
     nrow(population_events),
+    nrow(population_events),
+    nrow(terminal_necrosis_display_events),
+    sum(terminal_necrosis_display_events$n_necrosis_obs),
+    nrow(terminal_necrosis_events),
+    sum(terminal_necrosis_events$n_necrosis_obs),
+    "last_harvest_per_cohort",
+    "left_white_right_black",
+    "Terminal necrosis measurements",
+    "filled_square",
+    "above_growth_points",
+    terminal_necrosis_marker_offset - scrna_profile_marker_offset,
     dplyr::n_distinct(flow_density$sample_name),
     nrow(flow_box_stats),
     min(

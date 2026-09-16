@@ -547,12 +547,13 @@ bef_axis_tick_length_mm <- 0.90
 panel_title_size <- 15.5
 fit_subplot_title_size <- 10.5
 b_subplot_title_hjust <- 0.5
-b_starting_ploidy_legend_title <- "Starting\nploidy"
-c_landscape_body_widths <- c(scatter = 0.88, legend = 0.12)
+b_starting_ploidy_legend_title <- "Starting ploidy"
+b_legend_position <- "below_B"
+c_landscape_body_widths <- c(scatter = 0.84, legend = 0.16)
+c_legend_font_scale <- 1.20
 c_initial_point_size <- 0.12 * 1.50
 c_initial_legend_point_size <- 2.50 * 1.50
 stability_d_height_scale <- 0.60
-c_d_overlap_height <- 0.235 * stability_d_height_scale
 axis_title_size <- 10.2
 axis_text_size <- 9.2
 strip_text_size <- 9.6
@@ -606,10 +607,11 @@ assembled_row_heights_reference <- c(
   EF = 1.85
 )
 assembled_row_heights <- assembled_row_heights_reference
+assembled_row_heights[["BC"]] <- 2.00
 assembled_row_heights[["D"]] <-
   assembled_row_heights_reference[["D"]] * stability_d_height_scale
-# Shorten the canvas with panel D so that A-C and E-F retain their released
-# physical heights instead of expanding into the space removed from D.
+# Shorten the canvas with panels BC and D so the other rows keep their
+# physical heights rather than expanding into the space removed here.
 assembled_height_inches <- assembled_height_reference_inches *
   sum(assembled_row_heights) / sum(assembled_row_heights_reference)
 survival_legend_position <- c(0.72, 0.14)
@@ -755,7 +757,8 @@ text_pdf_device <- function(filename, width, height, ...) {
   )
 }
 
-save_plot_pair <- function(plot, stub, width, height, dpi = 220) {
+save_plot_pair <- function(
+    plot, stub, width, height, dpi = 220, png_device = NULL) {
   pdf_path <- paste0(stub, ".pdf")
   png_path <- paste0(stub, ".png")
   ggsave(
@@ -774,6 +777,7 @@ save_plot_pair <- function(plot, stub, width, height, dpi = 220) {
     width = width,
     height = height,
     units = "in",
+    device = png_device,
     dpi = dpi,
     bg = "white",
     limitsize = FALSE
@@ -987,7 +991,11 @@ workflow_context_boxes <- data.frame(
   title = c(
     "Separate\nin vitro fit",
     "Separate\nin vivo fit",
-    paste0("Common ", INVITRO_VISUALIZATION_SEED, "\nculture anchor"),
+    paste0(
+      "Common ",
+      sub("^seed", "seed ", INVITRO_VISUALIZATION_SEED),
+      "\nculture anchor"
+    ),
     paste0(primary_family_count, " landscape\nrepresentatives")
   ),
   detail = c(
@@ -1015,7 +1023,7 @@ workflow_core_boxes <- data.frame(
     "landscape-informed",
     "",
     "500 starts / pair",
-    "one selected / C family;\n500 endpoints each"
+    "one / C family;\n500 endpoints"
   ),
   stringsAsFactors = FALSE
 )
@@ -1026,9 +1034,9 @@ workflow_output_boxes <- data.frame(
   ymin = c(0.2, 0.2, 0.2),
   ymax = c(4.2, 4.2, 4.2),
   title = c(
-    "B.  Model performance",
-    "E. and F.  Fitted functions",
-    "D.  Context-specific\nstart vs endpoint"
+    "B.  Performance",
+    "E-F.  Functions",
+    "D.  Start vs\nendpoint"
   ),
   stringsAsFactors = FALSE
 )
@@ -1066,8 +1074,8 @@ workflow_welsch_layout <- c(
   bar_ymax = 13.5,
   connector_y = 12.75,
   label_x = 64.75,
-  label_y = 10.95,
-  detail_y = 9.65
+  label_y = 11.40,
+  detail_y = 8.70
 )
 workflow_welsch_label_size <- 2.70
 workflow_welsch_detail_size <- 2.45
@@ -1221,13 +1229,8 @@ p_a_body <- ggplot() +
     aes(x = (xmin + xmax) / 2, y = (ymin + ymax) / 2, label = title),
     color = "#334155",
     fontface = "bold",
-    size = 2.65
-  ) +
-  annotate(
-    "text",
-    x = 27.5, y = 1.8,
-    label = "Same chromosome-state model; context-specific observation models",
-    color = "#64748B", size = 2.80, fontface = "italic"
+    size = 2.35,
+    lineheight = 0.90
   ) +
   coord_cartesian(xlim = c(0, 100), ylim = c(0, 23), clip = "off") +
   theme_void(base_size = 8, base_family = figure_font_family) +
@@ -1562,7 +1565,7 @@ p_b_content <- wrap_plots(
   guides = "collect"
 ) &
   theme(
-    legend.position = "right",
+    legend.position = "none",
     legend.direction = "vertical",
     legend.box = "vertical",
     legend.title = element_text(
@@ -1579,29 +1582,57 @@ p_b_content <- wrap_plots(
     legend.margin = margin(0, 0, 0, 0),
     legend.box.margin = margin(0, 0, 0, 0)
   )
-p_b_note <- ggplot() +
+bc_active_height_scale <-
+  assembled_row_heights_reference[["BC"]] / assembled_row_heights[["BC"]]
+bc_panel_heights <- c(
+  header = 0.060 * bc_active_height_scale,
+  content = 0.690 * bc_active_height_scale
+)
+bc_panel_heights <- c(
+  bc_panel_heights,
+  legend = 1 - sum(bc_panel_heights)
+)
+p_b_legend_footer <- ggplot() +
   annotate(
-    "text",
-    x = 0,
-    y = 0.90,
-    label = paste0(
-      "Circle: 2N start; triangle: 4N start. ",
-      "Pale: ", primary_family_count,
-      " selected fits; filled: median; bars: selected-fit range."
-    ),
-    hjust = 0,
-    size = 3.10,
-    color = "#4B5563"
+    "text", x = 0.475, y = 0.5,
+    label = b_starting_ploidy_legend_title,
+    hjust = 1, family = figure_font_family, fontface = "bold",
+    size = 11 / ggplot2::.pt, color = "#27313A"
   ) +
-  coord_cartesian(xlim = c(0, 1), ylim = c(0, 1), clip = "off") +
+  annotate(
+    "point", x = 0.495, y = 0.5,
+    shape = 21, size = 3.3, fill = in_vivo_color,
+    color = "white", stroke = 0.35
+  ) +
+  annotate(
+    "text", x = 0.510, y = 0.5, label = "2N",
+    hjust = 0, family = figure_font_family,
+    size = 11 / ggplot2::.pt, color = "#27313A"
+  ) +
+  annotate(
+    "point", x = 0.555, y = 0.5,
+    shape = 24, size = 3.3, fill = in_vivo_color,
+    color = "white", stroke = 0.35
+  ) +
+  annotate(
+    "text", x = 0.570, y = 0.5, label = "4N",
+    hjust = 0, family = figure_font_family,
+    size = 11 / ggplot2::.pt, color = "#27313A"
+  ) +
+  coord_cartesian(xlim = c(0, 1), ylim = c(0, 1), expand = FALSE) +
   theme_void(base_family = figure_font_family) +
-  theme(plot.margin = margin(0, 3, 0, 3))
+  theme(
+    plot.background = element_rect(fill = "white", color = NA),
+    plot.margin = margin(0, 0, 0, 0)
+  )
 p_b <- wrap_plots(
   wrap_elements(full = p_b_header, clip = FALSE),
   wrap_elements(full = p_b_content, clip = FALSE),
-  wrap_elements(full = p_b_note, clip = FALSE),
+  wrap_elements(full = p_b_legend_footer, clip = FALSE),
   ncol = 1,
-  heights = c(0.060, 0.900, 0.040)
+  # Preserve the scatter-panel height and put the one-line key in the
+  # BC-row space immediately beneath panel B.
+  heights = unname(bc_panel_heights)
 )
 
 # -------------------------------------------------------------------------
@@ -2013,7 +2044,8 @@ p_c_vertical_key <- ggplot() +
   annotate(
     "text", x = 0.03, y = 0.995, label = "Objective",
     hjust = 0, vjust = 1, family = figure_font_family,
-    fontface = "bold", size = 2.75, color = "#27313A"
+    fontface = "bold", size = 2.75 * c_legend_font_scale,
+    color = "#27313A"
   ) +
   geom_rect(
     data = c_objective_vertical_steps,
@@ -2031,30 +2063,35 @@ p_c_vertical_key <- ggplot() +
   ) +
   annotate(
     "text", x = 0.08, y = 0.915, label = "In vivo",
-    hjust = 0, family = figure_font_family, fontface = "bold", size = 2.20,
+    hjust = 0, family = figure_font_family, fontface = "bold",
+    size = 2.20 * c_legend_font_scale,
     color = "#27313A"
   ) +
   annotate(
     "text", x = 0.08, y = 0.720, label = "In vitro",
-    hjust = 0, family = figure_font_family, fontface = "bold", size = 2.20,
+    hjust = 0, family = figure_font_family, fontface = "bold",
+    size = 2.20 * c_legend_font_scale,
     color = "#27313A"
   ) +
   annotate(
     "text", x = 0.22, y = c(0.87, 0.76),
     label = sprintf("%.1f", rev(c_vivo_objective_range)),
-    hjust = 0, family = figure_font_family, size = 2.05,
+    hjust = 0, family = figure_font_family,
+    size = 2.05 * c_legend_font_scale,
     color = "#4B5563"
   ) +
   annotate(
     "text", x = 0.22, y = c(0.68, 0.57),
     label = sprintf("%.1f", rev(c_vitro_objective_range)),
-    hjust = 0, family = figure_font_family, size = 2.05,
+    hjust = 0, family = figure_font_family,
+    size = 2.05 * c_legend_font_scale,
     color = "#4B5563"
   ) +
   annotate(
     "text", x = 0.03, y = 0.505, label = "Initial\nsamples",
     hjust = 0, family = figure_font_family, fontface = "bold",
-    lineheight = 0.88, size = 2.55, color = "#27313A"
+    lineheight = 0.88, size = 2.55 * c_legend_font_scale,
+    color = "#27313A"
   ) +
   annotate(
     "point", x = 0.14, y = 0.435, shape = 16,
@@ -2062,7 +2099,8 @@ p_c_vertical_key <- ggplot() +
   ) +
   annotate(
     "text", x = 0.27, y = 0.435, label = "In vivo",
-    hjust = 0, family = figure_font_family, size = 2.30,
+    hjust = 0, family = figure_font_family,
+    size = 2.30 * c_legend_font_scale,
     color = "#27313A"
   ) +
   annotate(
@@ -2071,13 +2109,15 @@ p_c_vertical_key <- ggplot() +
   ) +
   annotate(
     "text", x = 0.27, y = 0.375, label = "In vitro",
-    hjust = 0, family = figure_font_family, size = 2.30,
+    hjust = 0, family = figure_font_family,
+    size = 2.30 * c_legend_font_scale,
     color = "#27313A"
   ) +
   annotate(
     "text", x = 0.03, y = 0.305, label = "Warm-start\nfamily",
     hjust = 0, family = figure_font_family, fontface = "bold",
-    lineheight = 0.88, size = 2.55, color = "#27313A"
+    lineheight = 0.88, size = 2.55 * c_legend_font_scale,
+    color = "#27313A"
   ) +
   geom_label(
     data = c_vertical_cluster_key_data,
@@ -2086,7 +2126,7 @@ p_c_vertical_key <- ggplot() +
     fill = "white",
     text.colour = cluster_label_text_color,
     linewidth = cluster_label_border_linewidth,
-    size = 2.10,
+    size = 2.10 * c_legend_font_scale,
     fontface = cluster_label_fontface,
     label.padding = grid::unit(0.08, "lines"),
     label.r = grid::unit(0.05, "lines")
@@ -3153,7 +3193,7 @@ parameter_panels <- lapply(coupled_parameters, function(parameter) {
 parameter_distribution_row_count <- length(parameter_panels)
 distribution_standalone_height_inches <-
   0.40 * parameter_distribution_row_count + 0.90
-bc_row_widths <- c(B = 0.70, C = 0.30)
+bc_row_widths <- c(B = 0.64, C = 0.36)
 ef_panel_widths <- c(E = 1, F = 1)
 # Keep panel D at the full assembled-figure width while giving the compact
 # legend another 20% reduction; the released width is transferred directly to
@@ -4481,23 +4521,35 @@ figure5 <- (
   )
 }
 
+c_panel_left <- bc_row_widths[["B"]] - 0.005
+c_overlap_into_d_weight <-
+  0.80 * assembled_row_heights[["D"]] * d_assembled_header_fraction
+c_panel_height_weight <-
+  assembled_row_heights[["BC"]] + c_overlap_into_d_weight
+c_header_fraction <-
+  assembled_row_heights[["BC"]] * bc_panel_heights[["header"]] /
+  c_panel_height_weight
+c_panel_heights <- c(
+  header = c_header_fraction,
+  content = 1 - c_header_fraction
+)
 p_landscape_complete <- wrap_plots(
   wrap_elements(full = p_landscape_header, clip = FALSE),
   wrap_elements(full = p_landscape_body, clip = FALSE),
   ncol = 1,
-  heights = c(0.060, 0.940)
+  heights = unname(c_panel_heights)
 ) &
   theme(
     plot.background = element_rect(
-      fill = subplot_background_fill,
+      fill = "white",
       color = NA
     ),
     legend.background = element_rect(
-      fill = subplot_background_fill,
+      fill = "white",
       color = NA
     ),
     legend.box.background = element_rect(
-      fill = subplot_background_fill,
+      fill = "white",
       color = NA
     )
   )
@@ -4547,9 +4599,9 @@ stability_d_legacy_widths <- c(
 )
 stability_d_widths <- c(
   composition = 0.200,
-  log_ratio = 0.350,
-  context_distributions = 0.350,
-  legend = 0.100
+  log_ratio = 0.335,
+  context_distributions = 0.335,
+  legend = 0.130
 )
 stability_strip_theme <- theme(
   strip.text.x = element_text(
@@ -4724,7 +4776,7 @@ if (length(stability_parameter_order) != parameter_distribution_row_count ||
 p_stability_composition_compact <- p_stability_composition +
   labs(x = "Fraction of 500 endpoints") +
   theme(
-    axis.text.y = element_text(size = 6.6, face = "bold"),
+    axis.text.y = element_text(size = 8.3, face = "bold"),
     axis.title.x = element_text(size = 7.2, margin = margin(t = 3)),
     panel.spacing.x = grid::unit(1.0, "pt"),
     plot.margin = margin(4, 1, 5, 2)
@@ -4834,11 +4886,12 @@ stability_context_key <- data.frame(
   y = c(0.305, 0.245),
   stringsAsFactors = FALSE
 )
+d_compact_legend_font_scale <- 1.30
 p_stability_legend_compact <- ggplot() +
   annotate(
     "text", x = 0.03, y = 0.965, label = "Endpoint class",
     hjust = 0, family = figure_font_family, fontface = "bold",
-    size = 2.85, color = "#27313A"
+    size = 2.85 * d_compact_legend_font_scale, color = "#27313A"
   ) +
   geom_rect(
     data = transform(
@@ -4862,13 +4915,13 @@ p_stability_legend_compact <- ggplot() +
     inherit.aes = FALSE,
     hjust = 0,
     family = figure_font_family,
-    size = 2.20,
+    size = 2.20 * d_compact_legend_font_scale,
     color = "#27313A"
   ) +
   annotate(
     "text", x = 0.03, y = 0.635, label = "Warm-start family",
     hjust = 0, family = figure_font_family, fontface = "bold",
-    size = 2.65, color = "#27313A"
+    size = 2.65 * d_compact_legend_font_scale, color = "#27313A"
   ) +
   geom_point(
     data = transform(
@@ -4889,13 +4942,13 @@ p_stability_legend_compact <- ggplot() +
     inherit.aes = FALSE,
     hjust = 0,
     family = figure_font_family,
-    size = 2.30,
+    size = 2.30 * d_compact_legend_font_scale,
     color = "#27313A"
   ) +
   annotate(
     "text", x = 0.03, y = 0.440, label = "Right distributions",
     hjust = 0, family = figure_font_family, fontface = "bold",
-    size = 2.45, color = "#27313A"
+    size = 2.45 * d_compact_legend_font_scale, color = "#27313A"
   ) +
   geom_segment(
     data = transform(
@@ -4916,7 +4969,7 @@ p_stability_legend_compact <- ggplot() +
     inherit.aes = FALSE,
     hjust = 0,
     family = figure_font_family,
-    size = 2.00,
+    size = 2.00 * d_compact_legend_font_scale,
     color = "#27313A"
   ) +
   annotate(
@@ -4927,7 +4980,7 @@ p_stability_legend_compact <- ggplot() +
   annotate(
     "text", x = 0.23, y = 0.255, label = "DE initial",
     hjust = 0, family = figure_font_family,
-    size = 1.90, color = "#27313A"
+    size = 2.15 * d_compact_legend_font_scale, color = "#27313A"
   ) +
   annotate(
     "rect",
@@ -4937,9 +4990,9 @@ p_stability_legend_compact <- ggplot() +
   ) +
   annotate(
     "text", x = 0.23, y = 0.193,
-    label = "optimizer endpoint\n(fill=context; outline=family)",
+    label = "optimizer endpoint\n(fill=context;\noutline=family)",
     hjust = 0, lineheight = 0.90, family = figure_font_family,
-    size = 1.60, color = "#27313A"
+    size = 2.20 * d_compact_legend_font_scale, color = "#27313A"
   ) +
   annotate(
     "point", x = 0.115, y = 0.115,
@@ -4950,7 +5003,7 @@ p_stability_legend_compact <- ggplot() +
   annotate(
     "text", x = 0.23, y = 0.115, label = "optimizer median",
     hjust = 0, family = figure_font_family,
-    size = 1.75, color = "#27313A"
+    size = 2.15 * d_compact_legend_font_scale, color = "#27313A"
   ) +
   annotate(
     "rect",
@@ -4959,9 +5012,9 @@ p_stability_legend_compact <- ggplot() +
     color = joint_bound_edge_color, linewidth = 0.25
   ) +
   annotate(
-    "text", x = 0.23, y = 0.0525, label = "outer 5% joint bound",
+    "text", x = 0.23, y = 0.0525, label = "outer 5% joint\nbound",
     hjust = 0, family = figure_font_family,
-    size = 1.65, color = "#27313A"
+    size = 2.10 * d_compact_legend_font_scale, color = "#27313A"
   ) +
   scale_fill_identity() +
   scale_shape_manual(
@@ -5018,20 +5071,9 @@ bc_d_row_boundary <- assembled_row_heights[["D"]] / bc_d_total_height
 d_content_top <- bc_d_row_boundary -
   assembled_row_heights[["D"]] * d_assembled_header_fraction /
     bc_d_total_height
-c_overlap_bottom <- (
-  assembled_row_heights[["D"]] - c_d_overlap_height
-) / bc_d_total_height
-p_bc_d_overlap_block <- plot_spacer() +
-  inset_element(
-    p_landscape_complete,
-    left = bc_row_widths[["B"]],
-    bottom = c_overlap_bottom,
-    right = 1,
-    top = 1,
-    align_to = "full",
-    on_top = TRUE,
-    clip = FALSE
-  ) +
+c_panel_bottom <- bc_d_row_boundary -
+  c_overlap_into_d_weight / bc_d_total_height
+p_bc_d_block <- plot_spacer() +
   inset_element(
     p_b,
     left = 0,
@@ -5061,6 +5103,16 @@ p_bc_d_overlap_block <- plot_spacer() +
     align_to = "full",
     on_top = TRUE,
     clip = FALSE
+  ) +
+  inset_element(
+    p_landscape_complete,
+    left = c_panel_left,
+    bottom = c_panel_bottom,
+    right = 1,
+    top = 1,
+    align_to = "full",
+    on_top = TRUE,
+    clip = FALSE
   )
 p_ef_row <- wrap_plots(
   wrap_elements(full = p_functions_complete, clip = FALSE),
@@ -5071,7 +5123,7 @@ p_ef_row <- wrap_plots(
 
 figure5 <- (
     wrap_elements(full = p_a) /
-    wrap_elements(full = p_bc_d_overlap_block) /
+    wrap_elements(full = p_bc_d_block) /
     wrap_elements(full = p_ef_row) +
     plot_layout(
       heights = c(
@@ -5082,62 +5134,26 @@ figure5 <- (
     )
 ) +
   plot_annotation(
-    title = paste0(
-      "Joint-fit workflow, performance,\n",
-      "mechanisms, and solution stability"
-    ),
-    subtitle = paste0(
-      primary_family_count,
-      " primary-family pairs;\n",
-      "Panel D summarizes endpoint direction and within-family parameter-ratio stability."
-    ),
-    caption = paste0(
-      "B: circle = 2N start; triangle = 4N start. ",
-      "E-F: thin curves = ", primary_family_count,
-      " fits; thick curves = pointwise medians.\n",
-      "D: pink/gray/blue bars classify 500 optimizer endpoints per family and parameter;\n",
-      "center violins show non-degenerate endpoint log-ratio spread and symbols mark family medians;\n",
-      "right mirrored densities compare context-specific DE initial and optimizer-endpoint distributions.\n",
-      "The center D-axis spans the complete observed log-ratio range; right axes use parameter-specific natural scales.\n",
-      paste(family_levels, collapse = ", "),
-      " retain the same primary-family identities across panels;\n",
-      "optimizer distributions are descriptive ",
-      "numerical-search summaries, not posterior or confidence distributions."
-    ),
     theme = theme(
       text = element_text(family = figure_font_family),
       plot.background = element_rect(fill = "white", color = NA),
-      plot.title = element_text(
-        family = figure_font_family,
-        size = 23.0,
-        face = "bold",
-        color = "#111827",
-        margin = margin(b = 1)
-      ),
-      plot.subtitle = element_text(
-        family = figure_font_family,
-        size = 13.0,
-        color = "#4B5563",
-        margin = margin(b = 2)
-      ),
-      plot.caption = element_text(
-        family = figure_font_family,
-        size = 11.0,
-        color = "#5F6B76",
-        hjust = 0,
-        margin = margin(t = 2)
-      ),
       plot.margin = margin(4, 4, 3, 4)
     )
   )
 
 output_stub <- file.path(figure_root, "assembled_fig5")
+assembled_png_device <- if (requireNamespace("ragg", quietly = TRUE)) {
+  ragg::agg_png
+} else {
+  NULL
+}
 save_plot_pair(
   figure5,
   output_stub,
   width = assembled_width_inches,
   height = assembled_height_inches,
-  dpi = 300
+  dpi = 600,
+  png_device = assembled_png_device
 )
 for (extension in c("png", "pdf")) {
   source_path <- normalizePath(
@@ -5460,7 +5476,7 @@ validation <- data.frame(
     "Helvetica", "7.5", "6.1", "5.8", "5.8",
     "A,B,C,D,E,F", "B-C-D,E", "B,C", "D",
     "9.44", "0.8",
-    "4", "2.25", "0.072", "0.06", "TRUE", "64.75,10.95",
+    "4", "2.25", "0.072", "0.06", "TRUE", "64.75,11.4",
     "14.5", "1.75", "1.65",
     "1.2", "1",
     "2x2", "2:1", "2N-over-4N", "right",
@@ -6021,7 +6037,7 @@ validation <- data.frame(
     "panel_A_height_increased",
     "panel_B_layout",
     "panel_B_legend_position",
-    "panel_B_starting_ploidy_legend_two_lines",
+    "panel_B_starting_ploidy_legend_one_line",
     "panel_B_context_row_order",
     "panel_B_subtitle_smaller_than_panel_title",
     "panel_B_subtitle_centered",
@@ -6031,7 +6047,7 @@ validation <- data.frame(
     "panel_C_best_invitro_border_removed",
     "panel_C_initial_point_size",
     "panel_C_initial_legend_point_size",
-    "panel_C_maximized_in_D_noncontent_upper_right",
+    "panel_C_extends_into_B_D_blank_space",
     "panel_D_family_header_half_height",
     "panel_D_optimizer_black_underlay",
     "panel_D_legend_right",
@@ -6156,8 +6172,8 @@ validation <- data.frame(
     ),
     a_height_scale > 1,
     "1x4",
-    "right",
-    identical(b_starting_ploidy_legend_title, "Starting\nploidy"),
+    b_legend_position,
+    identical(b_starting_ploidy_legend_title, "Starting ploidy"),
     paste(p_b_panel_order, collapse = ";"),
     fit_subplot_title_size < panel_title_size,
     b_subplot_title_hjust,
@@ -6172,10 +6188,10 @@ validation <- data.frame(
       c_vitro_best_border_stroke == 0,
     c_initial_point_size,
     c_initial_legend_point_size,
-    c_d_overlap_height > 0 &&
-      c_overlap_bottom < assembled_row_heights[["D"]] /
-        sum(assembled_row_heights[c("BC", "D")]) &&
-      c_overlap_bottom >= d_content_top,
+    c_panel_left < bc_row_widths[["B"]] &&
+      c_panel_bottom < bc_d_row_boundary &&
+      c_panel_bottom > d_content_top &&
+      c_panel_heights[["content"]] > bc_panel_heights[["content"]],
     d_family_header_height,
     d_optimizer_black_underlay,
     paste(names(d_content_widths), collapse = ","),
@@ -6340,13 +6356,13 @@ validation <- data.frame(
     "TRUE",
     "TRUE",
     "1x4",
-    "right",
+    "below_B",
     "TRUE",
     "in_vitro_growth;in_vitro_mean_N;in_vivo_burden;in_vivo_terminal_mean_N",
     "TRUE",
     "0.5",
     "right",
-    "scatter_left_0.88;single_column_vertical_key_right_0.12",
+    "scatter_left_0.84;single_column_vertical_key_right_0.16",
     "2",
     "TRUE",
     "0.18",
@@ -6373,7 +6389,7 @@ validation <- data.frame(
     "10.2",
     "9.2",
     as.character(assembled_width_inches),
-    "14.4339622641509",
+    "13.8396226415094",
     as.character(round(assembled_width_inches / assembled_height_inches, 3)),
     "#C99700",
     "#6A3D9A",
@@ -6386,7 +6402,7 @@ validation <- data.frame(
     "TRUE",
     "TRUE",
     "1",
-    "0.200,0.350,0.350,0.100",
+    "0.200,0.335,0.335,0.130",
     "composition,log_ratio,context_distributions",
     "0.500",
     "TRUE",

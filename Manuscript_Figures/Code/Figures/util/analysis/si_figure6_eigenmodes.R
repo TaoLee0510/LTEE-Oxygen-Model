@@ -1367,11 +1367,6 @@ si7_weak_gap_jump_ecdf <- function(data, pair_summary) {
   pair_summary$model_context <- factor(
     pair_summary$model_context, levels = c("in vivo", "in vitro")
   )
-  pair_summary$annotation <- sprintf(
-    "3-class switch in >=50%% endpoints: %.1f%%\nMedian local change >=1: %.1f%%",
-    100 * pair_summary$fraction_weak_gap_majority_endpoint_local_switch,
-    100 * pair_summary$fraction_weak_gap_local_jump_median_ge_1
-  )
   family_colors <- c(
     C01 = "#C99700", C02 = "#6A3D9A", C03 = "#006D2C",
     C04 = "#0072B2", C05 = "#D55E00", C06 = "#009E73"
@@ -1386,12 +1381,6 @@ si7_weak_gap_jump_ecdf <- function(data, pair_summary) {
     ) +
     ggplot2::geom_vline(
       xintercept = 1, color = "#666666", linetype = "dashed", linewidth = 0.45
-    ) +
-    ggplot2::geom_text(
-      data = pair_summary,
-      ggplot2::aes(x = 2.92, y = 0.15, label = annotation),
-      inherit.aes = FALSE, hjust = 1, vjust = 0, size = 3.15,
-      lineheight = 1.05, color = "#222222"
     ) +
     ggplot2::facet_grid(model_context ~ display_label, switch = "y") +
     ggplot2::scale_color_manual(values = family_colors, guide = "none") +

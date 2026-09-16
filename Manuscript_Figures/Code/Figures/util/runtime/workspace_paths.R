@@ -4,6 +4,24 @@ Sys.setenv(
   RCPP_PARALLEL_NUM_THREADS = "1"
 )
 
+assert_container_runtime <- function() {
+  active <- tolower(trimws(Sys.getenv(
+    "LTEE_CONTAINER_RUNTIME_ACTIVE",
+    unset = Sys.getenv("O2SD_CONTAINER_RUNTIME_ACTIVE", unset = "")
+  )))
+  if (!active %in% c("true", "t", "1", "yes", "y")) {
+    stop(
+      "Publication fitting, analysis, and figure generation must run in the ",
+      "locked Docker image (or its verified Apptainer/Singularity SIF). ",
+      "Use Manuscript_Figures/Code/run_all_figures.sh instead of invoking ",
+      "Rscript on the host."
+    )
+  }
+  invisible(TRUE)
+}
+
+assert_container_runtime()
+
 resolve_script_path <- function() {
   args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", args, value = TRUE)
@@ -128,6 +146,13 @@ GEMCITABINE_DATA_ROOT <- resolve_runtime_input_path(
   "gemcitabine-data-root"
 )
 LTEE_DATA_ROOT <- resolve_runtime_input_path("ltee-data-root")
+INVITRO_SOURCE_DATA_ROOT <- normalizePath(
+  Sys.getenv(
+    "FIGURE_INVITRO_SOURCE_DATA_ROOT",
+    unset = file.path(LTEE_DATA_ROOT, "source_raw")
+  ),
+  mustWork = TRUE
+)
 MODEL_PACKAGE_ROOT <- normalizePath(
   file.path(PROJECT_ROOT, "Model"), mustWork = TRUE
 )
@@ -159,7 +184,8 @@ do.call(
     FIGURE_INVIVO_RESULT_ROOT = INVIVO_RESULT_ROOT,
     FIGURE_JOINT_RESULT_ROOT = JOINT_RESULT_ROOT,
     FIGURE_GEMCITABINE_DATA_ROOT = GEMCITABINE_DATA_ROOT,
-    FIGURE_LTEE_DATA_ROOT = LTEE_DATA_ROOT
+    FIGURE_LTEE_DATA_ROOT = LTEE_DATA_ROOT,
+    FIGURE_INVITRO_SOURCE_DATA_ROOT = INVITRO_SOURCE_DATA_ROOT
   ))
 )
 
@@ -353,7 +379,8 @@ write_resolved_input_manifest <- function() {
     "${INVIVO_RESULT_ROOT}" = INVIVO_RESULT_ROOT,
     "${JOINT_RESULT_ROOT}" = JOINT_RESULT_ROOT,
     "${GEMCITABINE_DATA_ROOT}" = GEMCITABINE_DATA_ROOT,
-    "${LTEE_DATA_ROOT}" = LTEE_DATA_ROOT
+    "${LTEE_DATA_ROOT}" = LTEE_DATA_ROOT,
+    "${INVITRO_SOURCE_DATA_ROOT}" = INVITRO_SOURCE_DATA_ROOT
   )
   for (token in names(replacements)) {
     lines <- gsub(token, replacements[[token]], lines, fixed = TRUE)
@@ -371,6 +398,7 @@ write_resolved_pipeline_parameters <- function() {
       "workspace_root", "repository_root",
       "baseline_logic", "invitro_result_root", "invivo_result_root",
       "joint_result_root", "gemcitabine_data_root", "ltee_data_root",
+      "invitro_source_data_root",
       "primary_frozen_input_source", "model_code_root",
       "invivo_visualization_seed", "invitro_visualization_seed",
       "fixed_o2_min", "fixed_o2_max",
@@ -381,7 +409,7 @@ write_resolved_pipeline_parameters <- function() {
       WORKSPACE_ROOT, REPO_ROOT,
       "current packaged figure logic", INVITRO_RESULT_ROOT,
       INVIVO_RESULT_ROOT, JOINT_RESULT_ROOT, GEMCITABINE_DATA_ROOT,
-      LTEE_DATA_ROOT, LTEE_DATA_ROOT,
+      LTEE_DATA_ROOT, INVITRO_SOURCE_DATA_ROOT, LTEE_DATA_ROOT,
       MODEL_CODE_ROOT, INVIVO_VISUALIZATION_SEED,
       INVITRO_VISUALIZATION_SEED, "0", "5", "201",
       "0.8", "1.2", "outer_inclusive"

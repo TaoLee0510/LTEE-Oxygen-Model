@@ -27,6 +27,23 @@ BASELINE_COLUMNS = (
     "size_bytes",
     "expected_md5",
 )
+EXCLUDED_MODEL_DIRECTORY_PARTS = frozenset(
+    (
+        "chromosome_flux",
+        ".rcpp_cache_o2_supply_demand_map",
+        "__pycache__",
+    )
+)
+
+
+def publication_model_file(path: Path, model_root: Path) -> bool:
+    """Return whether a Model file belongs to the publication workflow."""
+    relative = path.relative_to(model_root)
+    return (
+        path.is_file()
+        and path.name != ".DS_Store"
+        and not EXCLUDED_MODEL_DIRECTORY_PARTS.intersection(relative.parts)
+    )
 
 
 def find_workspace_root(start: Path) -> Path:
@@ -135,6 +152,17 @@ def read_baseline(path: Path) -> list[dict[str, str]]:
                 f"Unsafe relative_path at baseline line {line_number}: "
                 f"{relative_path}"
             )
+        if (
+            root_id == "model_code_root"
+            and any(
+                part in EXCLUDED_MODEL_DIRECTORY_PARTS
+                for part in relative.parts
+            )
+        ):
+            raise RuntimeError(
+                "Excluded model content appears in the publication baseline "
+                f"at line {line_number}: {relative_path}"
+            )
         try:
             size_bytes = int(row["size_bytes"])
         except ValueError as error:
@@ -198,7 +226,7 @@ def scientific_files_for_baseline(
         tuple(
             path
             for path in sorted(model_root.rglob("*"))
-            if path.is_file() and path.name != ".DS_Store"
+            if publication_model_file(path, model_root)
         ),
     )
 

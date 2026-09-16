@@ -51,7 +51,6 @@ a <- ggplot2::ggplot(trajectories,ggplot2::aes(day,mean)) +
   ggplot2::facet_grid(pair_label+initial~p_misseg) +
   ggplot2::scale_colour_manual(values=c("Continuous"="#222222","Stochastic mean"="#CC79A7"),name=NULL) +
   ggplot2::labs(title="A  Mean ploidy trajectories at fixed oxygen 0.5%",
-    subtitle="First q10 parameter identity per cluster; band: one stochastic SD; gray: three realizations",
     x="Experimental time (day)",y="Mean ploidy (N)") + base
 if (nrow(events)) {
   b <- ggplot2::ggplot(events,ggplot2::aes(day,cells_before)) +
@@ -62,21 +61,17 @@ if (nrow(events)) {
     ggplot2::scale_y_log10(labels=scales::label_number(scale=1e-6,suffix="M")) +
     ggplot2::facet_grid(pair_label~oxygen,scales="free_x") +
     ggplot2::labs(title="B  Actual integer-day passage populations",
-      subtitle="Initial 4N; p_misseg = 0.005; first realization, first ten passages",
       x="Experimental time (day)",y="Live cells") + base
 } else {
-  b <- ggplot2::ggplot() + ggplot2::annotate("text",x=0,y=0,
-    label="No passage events in the displayed diagnostic conditions") + ggplot2::theme_void()
+  b <- ggplot2::ggplot() + ggplot2::theme_void()
 }
 c <- ggplot2::ggplot(precision,ggplot2::aes(O2_pct,within_endpoint_sd_final_N,colour=pair_label)) +
   ggplot2::geom_line(linewidth=.5) + ggplot2::facet_wrap(~p_misseg,nrow=1,
     labeller=ggplot2::label_both) + ggplot2::scale_colour_manual(values=palette,name="Cluster") +
   ggplot2::labs(title="C  Stochastic dispersion at day 10,000",
-    subtitle="Initial 4N; square root of the mean within-endpoint variance across all 50 endpoints",
     x="Fixed oxygen (%)",y="Stochastic SD (N)") + base
 combined <- (a / b / c) + patchwork::plot_layout(heights=c(2.6,1.3,1)) +
-  patchwork::plot_annotation(title="Supplementary Figure 6-13. Stochastic passage diagnostics",
-    caption="Growth between passages uses deterministic expm. Randomness is confined to integerization and without-replacement reseeding; optimizer-endpoint variation is a separate uncertainty source.")
+  patchwork::plot_annotation(title="Supplementary Figure 6-13. Stochastic passage diagnostics")
 directory <- file.path(root,"data","Figures","Supp_Figure6_13")
 dir.create(directory,recursive=TRUE,showWarnings=FALSE)
 name <- "supp_fig6-13_stochastic_passage_diagnostics"

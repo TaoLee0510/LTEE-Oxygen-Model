@@ -480,12 +480,6 @@ make_dynamics_plot <- function(cohort_value, show_x_title) {
   area_data <- predicted_long %>% filter(cohort == cohort_factor)
   line_data <- trajectory_lines %>% filter(cohort == cohort_factor)
   obs_data <- observed %>% filter(cohort == cohort_factor)
-  sample_note <- if (identical(cohort_value, "2N")) {
-    "Observed burden: n=4 at every displayed measurement day"
-  } else {
-    "Observed burden: n=4 through day 77; n=2 at days 81–91"
-  }
-
   ggplot() +
     geom_area(
       data = area_data,
@@ -586,14 +580,7 @@ make_dynamics_plot <- function(cohort_value, show_x_title) {
       )
     ) +
     coord_cartesian(xlim = c(0, 100), expand = FALSE) +
-    labs(
-      subtitle = paste0(
-        sample_note,
-        ";\ngray ribbon = between-tumor sample SD (not error, CI, or model uncertainty)"
-      ),
-      x = NULL,
-      y = NULL
-    ) +
+    labs(x = NULL, y = NULL) +
     guides(
       fill = guide_legend(order = 1, nrow = 1, byrow = TRUE),
       color = guide_legend(
@@ -741,11 +728,7 @@ make_terminal_plot <- function(cohort_value, show_x_title) {
       expand = FALSE,
       clip = "on"
     ) +
-    labs(
-      subtitle = "Observed vs predicted; tumors weighted equally",
-      x = NULL,
-      y = NULL
-    ) +
+    labs(x = NULL, y = NULL) +
     guides(fill = guide_legend(order = 3, nrow = 1, byrow = TRUE)) +
     base_theme +
     theme(
@@ -781,7 +764,7 @@ column_strip_terminal <- make_column_strip("Terminal ploidy distribution")
 row_strip_2n <- make_row_strip("2N")
 row_strip_4n <- make_row_strip("4N")
 shared_left_axis_title <- make_axis_title(
-  "Effective O2 (%) / mean viable ploidy",
+  "O2 (%) / mean ploidy",
   angle = 90
 )
 shared_burden_axis_title <- make_axis_title(
@@ -1208,12 +1191,12 @@ draw_Figure4 <- function() {
     c(
       file.path(data_dir, c(
         "exploratory_cluster_parameter_omnibus_tests.tsv",
-        "figure4d_top6_parameters.tsv"
+        "figure4d_strongest_parameter.tsv"
       )),
       file.path(panel_dir, c(
         "parameter_continuous_ploidy_landscape.png",
         "parameter_tsne_groups.png",
-        "top6_cluster_parameter_distributions.png"
+        "strongest_cluster_parameter_distribution.png"
       ))
     ),
     "Figure 4B-D parameter-landscape output"
@@ -1232,7 +1215,7 @@ draw_Figure4 <- function() {
       panel_dir, "parameter_tsne_groups.png"
     ),
     bottom_right_bottom_panel = file.path(
-      panel_dir, "top6_cluster_parameter_distributions.png"
+      panel_dir, "strongest_cluster_parameter_distribution.png"
     ),
     supplementary_source = file.path(
       panel_dir, "all_parameter_fitted_endpoint_distributions"

@@ -256,10 +256,7 @@ p_heat <- ggplot(
     midpoint = 0, limits = c(-1, 1), oob = squish,
     na.value = "#D9D9D9", guide = "none"
   ) +
-  labs(
-    title = "Parameter-ploidy association",
-    subtitle = "Peak sign; descending max |rho|"
-  ) +
+  labs(title = "Parameter-ploidy association") +
   coord_cartesian(clip = "off") +
   theme_bw(base_size = 12, base_family = "Arial") +
   theme(
@@ -315,17 +312,14 @@ p_effect <- ggplot(
   ) +
   scale_x_continuous(
     name = expression(paste("Max |", rho, "|")),
-    limits = c(0, effect_x_max), breaks = seq(0, 1, by = 0.25),
+    limits = c(0, effect_x_max), breaks = c(0, 0.5, 1),
     expand = c(0, 0)
   ) +
   scale_y_continuous(
     name = NULL, breaks = parameter_axis$parameter_y,
     labels = NULL, limits = c(0.5, 18.5), expand = c(0, 0)
   ) +
-  labs(
-    title = expression(paste("Peak |", rho, "|")),
-    subtitle = "Fill = signed rho"
-  ) +
+  labs(title = expression(paste("Peak |", rho, "|"))) +
   coord_cartesian(clip = "on") +
   theme_bw(base_size = 11.5, base_family = "Arial") +
   theme(
@@ -358,10 +352,15 @@ format_endpoint_tick <- function(power) {
   if (power == -2) return("0.01")
   sprintf("1e%d", as.integer(power))
 }
-endpoint_x_breaks <- c(log_floor_plot, positive_endpoint_powers)
+endpoint_tick_powers <- if (length(positive_endpoint_powers) > 4L) {
+  positive_endpoint_powers[-1L]
+} else {
+  positive_endpoint_powers
+}
+endpoint_x_breaks <- c(log_floor_plot, endpoint_tick_powers)
 endpoint_x_labels <- c(
   "0",
-  vapply(positive_endpoint_powers, format_endpoint_tick, character(1L))
+  vapply(endpoint_tick_powers, format_endpoint_tick, character(1L))
 )
 range_fill <- "#D5D8DC"
 range_outline <- "#5F646A"
@@ -461,7 +460,7 @@ p_prior <- ggplot() +
     inherit.aes = FALSE
   ) +
   scale_x_continuous(
-    name = "Parameter value (log10 scale)",
+    name = "Parameter value\n(log10 scale)",
     breaks = endpoint_x_breaks,
     labels = endpoint_x_labels,
     limits = c(log_floor_plot - 0.10, max_endpoint_power + 0.15),
@@ -474,10 +473,7 @@ p_prior <- ggplot() +
     limits = c(0.5, 18.5),
     expand = c(0, 0)
   ) +
-  labs(
-    title = "Endpoints and fit range",
-    subtitle = "500 + seed25 above; range + initial below"
-  ) +
+  labs(title = "Endpoints and fit range") +
   theme_bw(base_size = 11.5, base_family = "Arial") +
   theme(
     text = element_text(face = "bold", color = "#111111"),
@@ -573,10 +569,7 @@ p_tsne <- ggplot(clusters, aes(tSNE1, tSNE2)) +
     name = "t-SNE 2", breaks = tsne_y_breaks,
     limits = tsne_y_limits, expand = c(0, 0)
   ) +
-  labs(
-    title = NULL,
-    subtitle = "500 in vivo endpoints; solid hulls show assigned groups"
-  ) +
+  labs(title = NULL) +
   coord_fixed(ratio = 1, expand = FALSE, clip = "off") +
   theme_bw(base_size = 12.5, base_family = "Arial") +
   theme(
@@ -723,40 +716,12 @@ combined_design <- c(
   area(t = 1, l = 1, b = 1, r = 11),
   area(t = 1, l = 12, b = 1, r = 15),
   area(t = 1, l = 16, b = 1, r = 21),
-  area(t = 1, l = 22, b = 1, r = 25)
+  area(t = 1, l = 22, b = 1, r = 27)
 )
 combined_core <- p_heat + p_effect + p_prior + p_sidebar +
-  plot_layout(design = combined_design, widths = rep(1, 25))
+  plot_layout(design = combined_design, widths = rep(1, 27))
 
-header_plot <- ggplot() +
-  annotate(
-    "text", x = 0, y = 0.50,
-    label = paste0(
-      "Spearman rho: 500 fitted endpoints x 201 fixed-O2 values. ",
-      "Rows: peak sign, then descending max |rho|."
-    ),
-    hjust = 0, vjust = 0.5, family = "Arial",
-    size = 11.8 / ggplot2::.pt, fontface = "bold", color = "#30353A"
-  ) +
-  coord_cartesian(xlim = c(0, 1), ylim = c(0, 1), clip = "off") +
-  theme_void() + theme(plot.margin = margin(0, 12, 0, 12))
-
-caption_plot <- ggplot() +
-  annotate(
-    "text", x = 0, y = 0.5,
-    label = paste0(
-      "Blue/red indicates association with lower/higher continuous dominant mean ploidy. ",
-      "Upper blue: 500 endpoints; green: seed25.\n",
-      "Lower gray: configured fitting range; black: initial value. Shared log10 axis; tick 0 is a dedicated zero-bound position."
-    ),
-    hjust = 0, vjust = 0.5, family = "Arial",
-    size = 9.8 / ggplot2::.pt, fontface = "bold", color = "#3E4348"
-  ) +
-  coord_cartesian(xlim = c(0, 1), ylim = c(0, 1), clip = "off") +
-  theme_void() + theme(plot.margin = margin(0, 12, 0, 12))
-
-combined <- header_plot / combined_core / caption_plot +
-  plot_layout(heights = c(0.45, 11.80, 0.65))
+combined <- combined_core
 
 main_base <- file.path(figure_dir, "parameter_continuous_ploidy_landscape")
 main_scale_boost <- 1.10
@@ -822,9 +787,6 @@ parameter_long[, cluster_factor := factor(
 )]
 figure4d_cluster_factor_labels <- sprintf(
   "ivv%s\n(n=%d)", sub("^vi_", "", cluster_levels), cluster_sizes[cluster_levels]
-)
-figure4d_cluster_size_text <- paste(
-  as.integer(cluster_sizes[cluster_levels]), collapse = " and "
 )
 
 # Figure 4D uses the same 500 fitted endpoints and prior-referenced parameter
@@ -893,19 +855,25 @@ cluster_parameter_tests[significant_bh_0p05 == TRUE,
 significant_tests <- cluster_parameter_tests[
   significant_bh_0p05 == TRUE
 ][order(-epsilon_squared, bh_q_value, display_order)]
-if (nrow(significant_tests) < 6L) {
-  stop("Fewer than six parameters pass BH q < 0.05 for Figure 4D.")
+if (!nrow(significant_tests)) {
+  stop("No parameter passes BH q < 0.05 for Figure 4D.")
 }
-figure4d_top6 <- copy(significant_tests[seq_len(6L)])
-figure4d_top6[, `:=`(
-  top6_rank = seq_len(.N),
+max_significant_epsilon_squared <- max(significant_tests$epsilon_squared)
+strongest_candidates <- significant_tests[
+  epsilon_squared == max_significant_epsilon_squared
+]
+setorder(strongest_candidates, bh_q_value, display_order)
+figure4d_strongest <- copy(strongest_candidates[1L])
+figure4d_strongest[, `:=`(
+  selected_effect_rank = 1L,
   selection_rule = paste0(
-    "BH q < 0.05; then descending Kruskal-Wallis epsilon-squared; ",
-    "BH q and Figure 4B display order break ties"
+    "BH q < 0.05 eligibility gate; select the maximum Kruskal-Wallis ",
+    "epsilon-squared; BH q and Figure 4B display order only break exact ",
+    "epsilon-squared ties"
   )
 )]
 cluster_parameter_tests[, selected_for_figure4d :=
-                          parameter %in% figure4d_top6$parameter]
+                          parameter == figure4d_strongest$parameter[[1L]]]
 
 fwrite(
   cluster_parameter_tests,
@@ -913,18 +881,11 @@ fwrite(
   sep = "\t"
 )
 fwrite(
-  figure4d_top6,
-  file.path(data_dir, "figure4d_top6_parameters.tsv"),
+  figure4d_strongest,
+  file.path(data_dir, "figure4d_strongest_parameter.tsv"),
   sep = "\t"
 )
 
-format_q_value <- function(value) {
-  if (value < 0.001) {
-    formatC(value, format = "e", digits = 1)
-  } else {
-    formatC(value, format = "f", digits = 3)
-  }
-}
 wrap_figure4d_parameter_label <- function(label) {
   parts <- strsplit(label, " | ", fixed = TRUE)[[1L]]
   if (length(parts) != 2L) return(label)
@@ -933,31 +894,13 @@ wrap_figure4d_parameter_label <- function(label) {
     paste(strwrap(parts[[2L]], width = 28), collapse = "\n")
   )
 }
-figure4d_labels <- figure4d_top6[, .(
-  parameter,
-  figure4d_facet_label = paste0(
-    vapply(
-      parameter_plot_label,
-      wrap_figure4d_parameter_label,
-      character(1L)
-    ),
-    "\nBH q=", vapply(bh_q_value, format_q_value, character(1L)),
-    "\nepsilon^2=", sprintf("%.3f", epsilon_squared)
-  ),
-  top6_rank
-)]
-figure4d_data <- merge(
-  parameter_long[parameter %in% figure4d_top6$parameter],
-  figure4d_labels,
-  by = "parameter",
-  all.x = TRUE,
-  sort = FALSE
+figure4d_parameter_title <- wrap_figure4d_parameter_label(
+  figure4d_strongest$parameter_plot_label[[1L]]
 )
-setorder(figure4d_data, top6_rank, cluster_id, seed_number)
-figure4d_data[, figure4d_facet := factor(
-  figure4d_facet_label,
-  levels = figure4d_labels[order(top6_rank), figure4d_facet_label]
-)]
+figure4d_data <- parameter_long[
+  parameter == figure4d_strongest$parameter[[1L]]
+]
+setorder(figure4d_data, cluster_id, seed_number)
 figure4d_data[, figure4d_cluster_factor := factor(
   cluster_id,
   levels = cluster_levels,
@@ -986,7 +929,6 @@ figure4d_plot <- ggplot(
     fun = mean, geom = "point", shape = 23, size = 2.2,
     stroke = 0.45, fill = "white", color = "#111111"
   ) +
-  facet_wrap(vars(figure4d_facet), ncol = 2, nrow = 3, scales = "fixed") +
   scale_fill_manual(
     values = setNames(
       unname(cluster_palette), figure4d_cluster_factor_labels
@@ -995,23 +937,17 @@ figure4d_plot <- ggplot(
   ) +
   scale_y_continuous(limits = c(-1.78, 1.78), breaks = c(-1.5, 0, 1.5)) +
   labs(
-    title = NULL,
-    subtitle = paste0(
-      "Kruskal-Wallis top six by epsilon^2 among BH q < 0.05 ",
-      "\n(18 tests); cluster n = ", figure4d_cluster_size_text, "."
-    ),
+    title = figure4d_parameter_title,
     x = "Exploratory t-SNE cluster",
-    y = "Prior-referenced fitted parameter value",
-    caption = paste0(
-      "Zero = transformed-range midpoint; diamonds = means.\n",
-      "Clusters were derived from these parameters; optimizer endpoints are not\n",
-      "posterior samples, biological replicates, or independent validation."
-    )
+    y = "Prior-referenced fitted parameter value"
   ) +
   theme_bw(base_size = 14, base_family = "Arial") +
   theme(
     text = element_text(face = "bold", color = "#111111"),
-    plot.title = element_blank(),
+    plot.title = element_text(
+      size = 16.5, face = "bold", color = "#202428",
+      hjust = 0.5, lineheight = 0.96, margin = margin(b = 6)
+    ),
     plot.subtitle = element_text(
       size = 12.5, face = "bold", color = "#30353A", margin = margin(b = 7)
     ),
@@ -1025,12 +961,6 @@ figure4d_plot <- ggplot(
       color = "#202020", linewidth = 0.60, lineend = "square"
     ),
     axis.ticks = element_line(color = "#202020", linewidth = 0.60),
-    strip.text = element_text(
-      size = 12.3, face = "bold", lineheight = 0.92
-    ),
-    strip.background = element_rect(
-      fill = "#F2F3F5", color = "#BFC3C8", linewidth = 0.35
-    ),
     panel.grid.minor = element_blank(),
     panel.grid.major.x = element_blank(),
     panel.grid.major.y = element_line(color = "#E3E5E8", linewidth = 0.3),
@@ -1041,7 +971,7 @@ figure4d_plot <- ggplot(
     plot.margin = margin(10, 10, 10, 10)
   )
 
-figure4d_base <- file.path(figure_dir, "top6_cluster_parameter_distributions")
+figure4d_base <- file.path(figure_dir, "strongest_cluster_parameter_distribution")
 figure4d_scale_boost <- 1.15
 figure4d_width <- 6.8 / figure4d_scale_boost
 figure4d_height <- 9.95 / figure4d_scale_boost
@@ -1146,8 +1076,8 @@ validation <- data.table(
     "figure4c_point_count", "figure4c_direct_cluster_label_count",
     "cluster_parameter_omnibus_test", "multiple_testing_adjustment",
     "cluster_parameter_effect_size", "significant_parameter_count_bh_0p05",
-    "figure4d_top_n", "figure4d_selection_rule",
-    "figure4d_selected_parameters", "figure4d_rendered",
+    "figure4d_selected_n", "figure4d_selection_rule",
+    "figure4d_selected_parameter", "figure4d_rendered",
     "main_output_width_in", "main_output_height_in",
     "figure4c_output_width_in", "figure4c_output_height_in",
     "figure4d_output_width_in", "figure4d_output_height_in"
@@ -1172,9 +1102,9 @@ validation <- data.table(
     ),
     "Benjamini-Hochberg across 18 parameters",
     "epsilon-squared = (H - k + 1) / (n - k)",
-    sum(cluster_parameter_tests$significant_bh_0p05), 6,
-    figure4d_top6$selection_rule[[1L]],
-    paste(figure4d_top6$parameter, collapse = ","), "TRUE",
+    sum(cluster_parameter_tests$significant_bh_0p05), 1,
+    figure4d_strongest$selection_rule[[1L]],
+    figure4d_strongest$parameter[[1L]], "TRUE",
     main_width, main_height, tsne_width, tsne_height,
     figure4d_width, figure4d_height
   )

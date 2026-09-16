@@ -23,10 +23,7 @@ source_result_root <- normalizePath(
   JOINT_RESULT_ROOT,
   mustWork = TRUE
 )
-source_repo_root <- normalizePath(
-  dirname(dirname(dirname(source_result_root))),
-  mustWork = TRUE
-)
+source_repo_root <- normalizePath(MODEL_PACKAGE_ROOT, mustWork = TRUE)
 code_snapshot_root <- normalizePath(MODEL_CODE_ROOT, mustWork = TRUE)
 if (startsWith(
       code_snapshot_root,
@@ -136,8 +133,6 @@ analysis_env$commandArgs <- function(trailingOnly = FALSE) {
 sys.source(analysis_script, envir = analysis_env, chdir = TRUE)
 joint_env <- analysis_env$load_joint_backend_env()
 
-hpc_repo_prefix <- "/share/lab_crd/taoli/Project/soft_couping_org"
-
 seed_number <- function(path) {
   suppressWarnings(as.integer(sub("^seed", "", basename(path))))
 }
@@ -192,9 +187,31 @@ for (family_index in seq_along(families)) {
   # The run snapshots are the authoritative parameter-table inputs.  Override
   # mutable repository paths in the effective command with the per-run copies.
   seed1_dir <- seed_dirs[[1L]]
+  effective_args_path <- analysis_env$effective_args_file_for_seed(seed1_dir)
+  if (is.na(effective_args_path)) {
+    stop("Missing effective-argument record for ", seed1_dir)
+  }
+  effective_args_table <- utils::read.delim(
+    effective_args_path, check.names = FALSE, stringsAsFactors = FALSE
+  )
+  if (!all(c("source", "key", "value") %in% names(effective_args_table))) {
+    stop("Malformed effective-argument record: ", effective_args_path)
+  }
+  archived_project_root <- effective_args_table$value[
+    effective_args_table$source == "fit_command" &
+      effective_args_table$key == "project_root"
+  ]
+  archived_project_root <- unique(trimws(archived_project_root))
+  archived_project_root <- archived_project_root[nzchar(archived_project_root)]
+  if (length(archived_project_root) != 1L) {
+    stop(
+      "Expected one archived project_root in ", effective_args_path,
+      "; observed ", length(archived_project_root)
+    )
+  }
   argv <- analysis_env$read_effective_argv(
     seed1_dir,
-    path_map_from = hpc_repo_prefix,
+    path_map_from = archived_project_root[[1L]],
     path_map_to = source_repo_root
   )
   argv$config <- file.path(

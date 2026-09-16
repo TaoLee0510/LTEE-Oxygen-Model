@@ -1,4 +1,17 @@
 /Manuscript_Figures/data/
+/results/
+/ignore/
+/container/*.sif
+/container/*.sif.provenance.tsv
+
+# Analyses explicitly outside the publication Figure 1-6 bundle
+/Manuscript_Figures/Code/Figures/*chromosome_flux*
+/Manuscript_Figures/Code/Figures/empirical_comparison/
+/Manuscript_Figures/Code/Figures/tests/*chromosome_flux*
+/Manuscript_Figures/Figures/*chromosome_flux*
+/Manuscript_Figures/Figures/*empirical_comparison*
+/Manuscript_Figures/audit/reports/*chromosome_flux*
+/Model/oxygen/code/O2_supply_demand_MAP/analysis/chromosome_flux/
 
 # Local operating-system and interpreter artifacts
 .DS_Store

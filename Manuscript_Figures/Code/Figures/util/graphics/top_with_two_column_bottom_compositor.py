@@ -67,13 +67,15 @@ PANEL_TITLES = {
     "A": "In vivo cohort dynamics and terminal ploidy",
     "B": "Oxygen-dependent parameter-ploidy landscape",
     "C": "Exploratory fitted-endpoint landscape",
-    "D": "Top six cluster-separating fitted parameters",
+    "D": "Strongest fitted-parameter separation",
 }
 PANEL_LABEL_POINTSIZE = 88
 PANEL_TITLE_POINTSIZE = {"A": 88, "B": 88, "C": 58, "D": 58}
 PANEL_LABEL_X = 34
 PANEL_TITLE_X = 140
 PANEL_LABEL_Y = 18
+PDF_PAGE_SIZE_BP = 1296
+PDF_BP_PER_PIXEL = PDF_PAGE_SIZE_BP / CANVAS_WIDTH
 
 if PANEL_A_HEIGHT + VERTICAL_GAP + BOTTOM_ROW_HEIGHT != CANVAS_HEIGHT:
     raise RuntimeError("Canvas and row heights are inconsistent.")
@@ -109,6 +111,126 @@ def png_dimensions(path: Path) -> tuple[int, int]:
     ):
         raise RuntimeError(f"Invalid PNG: {path}")
     return struct.unpack(">II", header[16:24])
+
+
+def tex_pdf_path(path: Path) -> str:
+    return r"\detokenize{" + str(path.resolve()) + "}"
+
+
+def vector_pdf_panel(
+    label: str,
+    source: Path,
+    *,
+    slot_x: int,
+    slot_y: int,
+    slot_width: int,
+    slot_height: int,
+) -> str:
+    source_width, source_height = png_dimensions(source)
+    content_width = slot_width - 2 * ROW_PAD
+    content_height = slot_height - PANEL_LABEL_BAND
+    scale = min(content_width / source_width, content_height / source_height)
+    drawn_width = round(source_width * scale)
+    drawn_height = round(source_height * scale)
+    left = (slot_x + (slot_width - drawn_width) / 2) * PDF_BP_PER_PIXEL
+    bottom = (
+        CANVAS_HEIGHT - slot_y - PANEL_LABEL_BAND - drawn_height
+    ) * PDF_BP_PER_PIXEL
+    title_size = PANEL_TITLE_POINTSIZE[label] * PDF_BP_PER_PIXEL
+    label_size = PANEL_LABEL_POINTSIZE * PDF_BP_PER_PIXEL
+    title_y = PANEL_LABEL_Y + round(
+        (PANEL_LABEL_POINTSIZE - PANEL_TITLE_POINTSIZE[label]) / 2
+    )
+    label_x = (slot_x + PANEL_LABEL_X) * PDF_BP_PER_PIXEL
+    label_y = (slot_y + PANEL_LABEL_Y) * PDF_BP_PER_PIXEL
+    title_x = (slot_x + PANEL_TITLE_X) * PDF_BP_PER_PIXEL
+    title_top = (slot_y + title_y) * PDF_BP_PER_PIXEL
+    pdf_source = source.with_suffix(".pdf")
+    return "\n".join(
+        (
+            r"\node[anchor=south west,inner sep=0] at "
+            f"([xshift={left:.4f}bp,yshift={bottom:.4f}bp]current page.south west)"
+            f"{{\\includegraphics[width={drawn_width * PDF_BP_PER_PIXEL:.4f}bp,"
+            f"height={drawn_height * PDF_BP_PER_PIXEL:.4f}bp]"
+            f"{{{tex_pdf_path(pdf_source)}}}}};",
+            r"\node[anchor=north west,inner sep=0,font="
+            f"\\fontsize{{{label_size:.4f}bp}}{{{label_size * 1.08:.4f}bp}}"
+            r"\fontfamily{phv}\bfseries\selectfont] at "
+            f"([xshift={label_x:.4f}bp,yshift=-{label_y:.4f}bp]current page.north west)"
+            f"{{{label}.}};",
+            r"\node[anchor=north west,inner sep=0,font="
+            f"\\fontsize{{{title_size:.4f}bp}}{{{title_size * 1.08:.4f}bp}}"
+            r"\fontfamily{phv}\bfseries\selectfont] at "
+            f"([xshift={title_x:.4f}bp,yshift=-{title_top:.4f}bp]current page.north west)"
+            f"{{{PANEL_TITLES[label]}}};",
+        )
+    )
+
+
+def make_vector_pdf(staged: dict[str, Path], destination: Path, temp: Path) -> None:
+    pdflatex = shutil.which("pdflatex")
+    if pdflatex is None:
+        raise RuntimeError("pdfLaTeX is required for selectable Figure 4 PDF text.")
+    panels = (
+        ("A", staged["a"], 0, 0, CANVAS_WIDTH, PANEL_A_HEIGHT),
+        ("B", staged["b"], 0, PANEL_A_HEIGHT + VERTICAL_GAP,
+         PANEL_B_WIDTH, BOTTOM_ROW_HEIGHT),
+        ("C", staged["c"], PANEL_B_WIDTH + HORIZONTAL_GAP,
+         PANEL_A_HEIGHT + VERTICAL_GAP, RIGHT_COLUMN_WIDTH, PANEL_C_HEIGHT),
+        ("D", staged["d"], PANEL_B_WIDTH + HORIZONTAL_GAP,
+         PANEL_A_HEIGHT + VERTICAL_GAP + PANEL_C_HEIGHT + RIGHT_STACK_GAP,
+         RIGHT_COLUMN_WIDTH, PANEL_D_HEIGHT),
+    )
+    placements = "\n".join(
+        vector_pdf_panel(
+            label, source, slot_x=x, slot_y=y,
+            slot_width=width, slot_height=height,
+        )
+        for label, source, x, y, width, height in panels
+    )
+    tex = (
+        r"\documentclass{article}" "\n"
+        r"\usepackage[paperwidth=18in,paperheight=18in,margin=0in]{geometry}" "\n"
+        r"\usepackage{graphicx}" "\n"
+        r"\usepackage{tikz}" "\n"
+        r"\pagestyle{empty}" "\n"
+        r"\begin{document}" "\n"
+        r"\begin{tikzpicture}[remember picture,overlay]" "\n"
+        + placements + "\n"
+        r"\end{tikzpicture}" "\n"
+        r"\null" "\n"
+        r"\end{document}" "\n"
+    )
+    tex_path = temp / "assembled_fig4_vector.tex"
+    tex_path.write_text(tex, encoding="utf-8")
+    run(
+        [pdflatex, "-interaction=nonstopmode", "-halt-on-error",
+         f"-output-directory={temp}", str(tex_path)]
+    )
+    # TikZ remember-picture coordinates resolve on the second LaTeX pass.
+    run(
+        [pdflatex, "-interaction=nonstopmode", "-halt-on-error",
+         f"-output-directory={temp}", str(tex_path)]
+    )
+    rendered = tex_path.with_suffix(".pdf")
+    if not rendered.exists() or rendered.stat().st_size == 0:
+        raise RuntimeError("The vector Figure 4 PDF was not created.")
+    pdftotext = shutil.which("pdftotext")
+    if pdftotext is None:
+        raise RuntimeError("pdftotext is required to validate selectable PDF text.")
+    extracted = subprocess.run(
+        [pdftotext, str(rendered), "-"],
+        check=True,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    ).stdout
+    if (
+        "In vivo cohort dynamics and terminal ploidy" not in extracted
+        or "Strongest fitted-parameter separation" not in extracted
+    ):
+        raise RuntimeError("Figure 4 PDF is missing selectable panel headings.")
+    shutil.copy2(rendered, destination)
 
 
 def stage_panels() -> dict[str, Path]:
@@ -215,7 +337,7 @@ def assemble(staged: dict[str, Path]) -> Path:
         raise RuntimeError(f"Panel-label font was not found: {LABEL_FONT}")
 
     with tempfile.TemporaryDirectory(
-        prefix="figure4_four_panel_compositor_"
+        prefix="figure4_four_panel_compositor_", dir=PANEL_ROOT
     ) as temp_name:
         temp = Path(temp_name)
         env = os.environ.copy()
@@ -356,21 +478,7 @@ def assemble(staged: dict[str, Path]) -> Path:
             )
 
         local_pdf = PANEL_ROOT / f"{OUTPUT_BASENAME}.pdf"
-        run(
-            [
-                magick,
-                str(local_output),
-                "+repage",
-                "-units",
-                "PixelsPerInch",
-                "-density",
-                "300x300",
-                "-compress",
-                "Zip",
-                str(local_pdf),
-            ],
-            env,
-        )
+        make_vector_pdf(staged, local_pdf, temp)
         if not local_pdf.exists() or local_pdf.stat().st_size == 0:
             raise RuntimeError("Final composite PDF was not created.")
 

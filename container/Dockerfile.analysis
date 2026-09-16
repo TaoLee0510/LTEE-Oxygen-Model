@@ -1,0 +1,10 @@
+ARG O2_ANALYSIS_BASE=docker.io/zafiro/o2_supply_demand_map:r44@sha256:32d30d8d3cae9468e466cabeaa7f51cfcc07b4a867ea66aa06c998c141067132
+FROM ${O2_ANALYSIS_BASE}
+
+LABEL org.opencontainers.image.title="LTEE oxygen-model publication runtime" \
+      org.opencontainers.image.description="Locked runtime for LTEE oxygen model fitting, downstream analysis, and Figure 1-6 generation" \
+      org.opencontainers.image.version="publication-r44" \
+      org.opencontainers.image.base.name="docker.io/zafiro/o2_supply_demand_map:r44" \
+      org.opencontainers.image.base.digest="sha256:32d30d8d3cae9468e466cabeaa7f51cfcc07b4a867ea66aa06c998c141067132"
+
+WORKDIR /workspace

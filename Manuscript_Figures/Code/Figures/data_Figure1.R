@@ -9,10 +9,6 @@ source(file.path(script_dir, "util", "runtime", "process_runner.R"))
 data_Figure1 <- function() {
   destination_root <- file.path(DATA_ROOT, "Figure1")
   frozen_source <- LTEE_DATA_ROOT
-  frozen_files <- sort(list.files(
-    frozen_source, full.names = TRUE, recursive = FALSE
-  ))
-  frozen_files <- frozen_files[file.info(frozen_files)$isdir %in% FALSE]
   expected <- c(
     "invitro_kary_cells.tsv",
     "invitro_lineage_timeline.tsv",
@@ -21,21 +17,15 @@ data_Figure1 <- function() {
     "invivo_harvest_catalog.tsv",
     "invivo_ploidy_cells.tsv"
   )
-  if (!identical(basename(frozen_files), sort(expected))) {
-    stop("Figure 1 frozen-input set differs from the approved six-file contract.")
-  }
+  frozen_files <- file.path(frozen_source, sort(expected))
+  require_files(frozen_files, "Figure 1 frozen six-file contract")
 
-  soft_coupling_root <- normalizePath(
-    file.path(INVITRO_RESULT_ROOT, "..", "..", ".."),
-    mustWork = TRUE
-  )
   population_source <- file.path(
-    soft_coupling_root,
-    "data", "InVitroData",
+    INVITRO_SOURCE_DATA_ROOT,
     "cloneid_passaging_sum159_snapshot_20260731.tsv"
   )
   flow_source <- file.path(
-    INVITRO_RESULT_ROOT, INVITRO_VISUALIZATION_SEED, "invitro_observed_flow.tsv"
+    INVITRO_SOURCE_DATA_ROOT, "invitro_observed_flow.tsv"
   )
   require_files(
     c(population_source, flow_source),

@@ -544,8 +544,14 @@ f6ft_parallel_lapply <- function(X, FUN, n_core = 1L) {
   } else {
     future::plan(future::multisession, workers = n_core)
   }
+  scheduling <- suppressWarnings(as.numeric(Sys.getenv(
+    "FIGURE6_FINITE_TIME_FUTURE_SCHEDULING", "1"
+  )))
+  if (length(scheduling) != 1L || !is.finite(scheduling) || scheduling < 1) {
+    stop("FIGURE6_FINITE_TIME_FUTURE_SCHEDULING must be a number >= 1.")
+  }
   future.apply::future_lapply(
-    X, FUN, future.seed = TRUE, future.scheduling = 1
+    X, FUN, future.seed = TRUE, future.scheduling = scheduling
   )
 }
 

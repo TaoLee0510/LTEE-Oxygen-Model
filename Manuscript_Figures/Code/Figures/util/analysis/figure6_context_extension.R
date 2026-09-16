@@ -520,7 +520,6 @@ f6x_draw_supplement_7_1 <- function(
     ggplot2::coord_equal() +
     ggplot2::labs(
       title = "C. Response classes in pooled parameter space",
-      subtitle = "Circles: in vivo; triangles: in vitro; black outlines: class-best fits",
       x = "Pooled 14-parameter t-SNE coordinate 1",
       y = "Pooled 14-parameter t-SNE coordinate 2",
       colour = "O2-ploidy response class", shape = "Context"
@@ -604,7 +603,6 @@ f6x_draw_supplement_7_1 <- function(
     ) +
     ggplot2::labs(
       title = "D. Full-MAP fit quality across response classes",
-      subtitle = "Context-specific objective minus the minimum within that context",
       x = "O2-ploidy response class (numbered in panel C legend)",
       y = expression(Delta*" full-MAP objective"), fill = "Context",
       colour = "Context"
@@ -1855,32 +1853,17 @@ f6x_draw_supplement_7_2 <- function(
     vitro_dedup$pair_id %in% unique(vitro$pair_id), , drop = FALSE
   ]
   primary <- ksel[ksel$analysis_level == "primary pooled t-SNE regions", ]
-  selected_k_frequency <- paste0(
-    "k=", bootstrap$selected_k, ": ", bootstrap$n_subsample, "/",
-    sum(bootstrap$n_subsample), collapse = "; "
-  )
   p_a <- ggplot2::ggplot(primary, ggplot2::aes(k, average_silhouette)) +
     ggplot2::geom_line(colour = "#555555", linewidth = 0.55) +
     ggplot2::geom_point(
       ggplot2::aes(fill = selected_for_warm_starts), shape = 21,
       size = 2.4, colour = "#222222", stroke = 0.45
     ) +
-    ggplot2::annotate(
-      "text", x = f6r_family_count(),
-      y = primary$average_silhouette[
-        primary$k == f6r_family_count()
-      ] - 0.015,
-      label = paste0("saved k=", f6r_family_count()), size = 2.45
-    ) +
     ggplot2::scale_fill_manual(values = c(`FALSE` = "white", `TRUE` = "#0072B2"), guide = "none") +
     ggplot2::scale_x_continuous(breaks = 2:8) +
     ggplot2::labs(
       tag = "A", title = "Shared primary warm-start-region selection",
-      subtitle = paste0(
-        "The joint workflow uses the saved k=", f6r_family_count(),
-        " primary partition.\n",
-        "80% subsample silhouette maxima: ", selected_k_frequency, "."
-      ), x = "Number of regions (k)", y = "Average silhouette"
+      x = "Number of regions (k)", y = "Average silhouette"
     ) + f6r_theme()
   acceptance$delta_display <- pmax(acceptance$delta_objective, 1e-4)
   counts <- aggregate(
@@ -1912,7 +1895,6 @@ f6x_draw_supplement_7_2 <- function(
     ggplot2::scale_x_continuous(breaks = c(1, 100, 250, 500)) +
     ggplot2::labs(
       tag = "B", title = "Selected-family joint-objective eligibility",
-      subtitle = "Blue region: lowest 10%; vertical lines mark 5%, 10%, and 20% sets.",
       x = "Objective rank within warm-start pair",
       y = expression(Delta*" joint full-MAP objective (log10)")
     ) + f6r_theme() +
@@ -1963,10 +1945,6 @@ f6x_draw_supplement_7_2 <- function(
     ggplot2::scale_y_discrete(labels = scales::label_wrap(34)) +
     ggplot2::labs(
       tag = "C", title = "Context-specific top-50 endpoint robustness",
-      subtitle = paste0(
-        "Text gives the modal result and exact support; a red cross marks a change after ",
-        "collapsing duplicate parameter endpoints."
-      ),
       x = "Selected warm-start family", y = NULL
     ) + f6r_theme() +
     ggplot2::theme(
@@ -1975,15 +1953,7 @@ f6x_draw_supplement_7_2 <- function(
       strip.text.y = ggplot2::element_text(face = "bold")
     )
   combined <- ((p_a | p_b) + patchwork::plot_layout(widths = c(0.68, 1.32))) /
-    p_c + patchwork::plot_layout(heights = c(0.78, 1.42)) +
-    patchwork::plot_annotation(
-      caption = paste0(
-        "A records the ", f6r_family_count(),
-        " primary warm-start regions. B-C include ",
-        paste(f6r_family_levels(), collapse = ", "),
-        ", the pairs displayed in Figure 6; optimizer seeds are not biological replicates."
-      )
-    )
+    p_c + patchwork::plot_layout(heights = c(0.78, 1.42))
   output <- f6r_save_plot(
     combined,
     file.path(paths$supp6_2, "supp_fig6-2_joint_ensemble_robustness"),
