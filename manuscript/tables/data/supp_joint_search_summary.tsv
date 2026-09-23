@@ -1,3 +1,0 @@
-family	invivo_seed_number	invitro_seed	joint_seed_number	objective	iteration_range	de_flag	local	winner_bounds	n_hard_qc	n_accepted	delta_objective_cutoff
-C01	366	seed144	94	18.880994600843	26--95	500/500	not accepted; code 52	2	500	50	0.0631813237501007
-C02	25	seed144	80	18.9350105857949	26--45	500/500	not accepted; code 52	1	500	50	0.00267274601350209

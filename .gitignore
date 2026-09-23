@@ -1,6 +1,7 @@
 /Manuscript_Figures/data/
 /results/
 /ignore/
+/manuscript/
 /container/*.sif
 /container/*.sif.provenance.tsv
 
